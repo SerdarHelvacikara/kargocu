@@ -38,12 +38,25 @@ namespace KurmaliKargo
         {
             yield return null;
             game.StartRun();
-            Check(game.InShift && game.Phase == GamePhase.Playing && game.ShiftStars == 3 && game.ShiftLevel == 1 && !game.HasPackage,
-                "Start begins a shift with three stars, level one and an order to pick up");
+            Check(game.InShift && game.Phase == GamePhase.ShiftCard && game.ShiftOpeningPick && game.ShiftOfferCount == 3,
+                "A shift opens with a free power pick");
+            yield return Shot("0-opening-pick");
+            ShiftCard opening = game.ShiftOffer(1);
+            game.ChooseShiftCard(1);
+            Check(game.Phase == GamePhase.Playing && game.CardLevel(opening) == 1 && game.ShiftStars == 3 && game.ShiftLevel == 1 && !game.HasPackage,
+                "After the pick the shift runs with three stars, level one and nothing in hand");
+            Check(game.LiveBoardCountForTest == 2, "Two orders wait on the street at the start");
+            yield return Shot("1a-board");
+
+            game.ExpireBoardForTest();
+            yield return WaitUntil(() => game.LiveBoardCountForTest == 0, 1);
+            Check(game.LiveBoardCountForTest == 0 && game.ShiftStars == 3, "A missed waiting order is cancelled without costing a star");
+            yield return WaitUntil(() => game.LiveBoardCountForTest > 0, 3);
+            Check(game.LiveBoardCountForTest > 0, "The board refills after cancellations");
 
             yield return PickUp();
-            Check(game.HasPackage, "Reaching the pickup loads the parcel");
-            yield return Shot("1-playing");
+            Check(game.HasPackage, "Reaching a waiting order loads its parcel");
+            yield return Shot("1b-carrying");
             int wallet = game.Coins;
             game.PlaceForTest(game.TargetPosition);
             yield return WaitUntil(() => game.ShiftDeliveries == 1 || game.Phase == GamePhase.ShiftCard, 3);
@@ -53,9 +66,20 @@ namespace KurmaliKargo
                 "A fast, careful first delivery levels up and offers three cards");
             yield return Shot("2-cards");
             ShiftCard picked = game.ShiftOffer(0);
+            int before = game.CardLevel(picked);
             game.ChooseShiftCard(0);
-            Check(game.Phase == GamePhase.Playing && game.CardLevel(picked) == 1 && !game.HasPackage,
+            Check(game.Phase == GamePhase.Playing && game.CardLevel(picked) == before + 1 && !game.HasPackage,
                 "Choosing a card applies it and returns to the next order");
+
+            // A bumpy delivery earns less XP, so play continues and the payout pop is visible.
+            yield return PickUp();
+            game.SetCargoForTest(60);
+            wallet = game.Coins;
+            game.PlaceForTest(game.TargetPosition);
+            yield return WaitUntil(() => game.ShiftDeliveries == 2, 3);
+            Check(game.ShiftDeliveries == 2 && game.Phase == GamePhase.Playing && game.Coins > wallet && game.ComboCount == 0,
+                "A damaged delivery still pays but breaks the streak");
+            yield return ShotNow("1c-payout");
 
             for (int star = 2; star >= 0; star--)
             {
@@ -84,7 +108,8 @@ namespace KurmaliKargo
 
             game.StartAnotherShift();
             yield return null;
-            Check(game.InShift && game.Phase == GamePhase.Playing && game.ShiftStars == 3 && game.ShiftDeliveries == 0, "A new shift starts fresh");
+            Check(game.InShift && game.Phase == GamePhase.ShiftCard && game.ShiftStars == 3 && game.ShiftDeliveries == 0, "A new shift starts fresh");
+            game.ChooseShiftCard(0);
             wallet = game.Coins;
             game.SetShiftElapsedForTest(CourierGame.ShiftLength - .05f);
             yield return WaitUntil(() => game.Phase == GamePhase.ShiftEnd, 2);
@@ -110,6 +135,16 @@ namespace KurmaliKargo
             if (string.IsNullOrEmpty(dir)) yield break;
             for (int i = 0; i < 20; i++) yield return null;
             yield return new WaitForEndOfFrame();
+            Directory.CreateDirectory(dir);
+            ScreenCapture.CaptureScreenshot(Path.Combine(dir, name + ".png"));
+            yield return null;
+        }
+
+        IEnumerator ShotNow(string name)
+        {
+            string dir = Arg("-shotDir", "");
+            if (string.IsNullOrEmpty(dir)) yield break;
+            for (int i = 0; i < 12; i++) yield return null;
             Directory.CreateDirectory(dir);
             ScreenCapture.CaptureScreenshot(Path.Combine(dir, name + ".png"));
             yield return null;

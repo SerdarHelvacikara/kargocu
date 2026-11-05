@@ -11,7 +11,7 @@ namespace KurmaliKargo
         Transform body, leftWing, rightWing, tail, parachute;
         readonly Transform[] legs = new Transform[4];
         Material paint;
-        float gait, parachuteTime;
+        float gait, parachuteTime, wingFold;
         Vector3 parachuteDestination;
         static readonly Color Cream = ToyGeometry.Hex("FFF0D2");
         static readonly Color Ink = ToyGeometry.Hex("365566");
@@ -186,8 +186,21 @@ namespace KurmaliKargo
             float wave = reducedMotion ? 0 : Mathf.Sin(gait);
             body.localPosition = new Vector3(0, reducedMotion ? 0 : wave * (IsDragon ? .065f : .024f * speed), 0);
             body.localRotation = Quaternion.Euler(0, 0, reducedMotion ? 0 : -Mathf.Clamp(turn01, -1, 1) * 3);
-            if (leftWing) leftWing.localRotation = Quaternion.Euler(0, 0, reducedMotion ? 0 : -wave * 13);
-            if (rightWing) rightWing.localRotation = Quaternion.Euler(0, 0, reducedMotion ? 0 : wave * 13);
+            // Wings fold up while riding so the dragon fits the same lane as every
+            // other vehicle; they open again when it slows down or stops.
+            float targetFold = speed > .15f ? 1 : 0;
+            wingFold = reducedMotion || !animate ? targetFold : Mathf.MoveTowards(wingFold, targetFold, Time.deltaTime * 4);
+            float flap = reducedMotion ? 0 : wave * 13 * (1 - wingFold);
+            if (leftWing)
+            {
+                leftWing.localRotation = Quaternion.Euler(0, 0, -flap - 72 * wingFold);
+                leftWing.localScale = new Vector3(Mathf.Lerp(1, .5f, wingFold), 1, 1);
+            }
+            if (rightWing)
+            {
+                rightWing.localRotation = Quaternion.Euler(0, 0, flap + 72 * wingFold);
+                rightWing.localScale = new Vector3(Mathf.Lerp(1, .5f, wingFold), 1, 1);
+            }
             if (tail) tail.localRotation = Quaternion.Euler(0, reducedMotion ? 0 : wave * 5 * (IsDragon ? 1 : speed), 0);
             for (int i = 0; i < legs.Length; i++)
                 if (legs[i]) legs[i].localRotation = Quaternion.Euler(reducedMotion ? 0 : Mathf.Sin(gait + (i % 3 == 0 ? 0 : Mathf.PI)) * speed * 12, 0, 0);

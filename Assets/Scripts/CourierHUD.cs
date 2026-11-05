@@ -52,6 +52,7 @@ namespace KurmaliKargo
         public bool BlocksPointer(Vector2 screenPosition)
         {
             if (!Game || Game.Phase != GamePhase.Playing) return true;
+            if (Game.InShift) return ShiftHUD.BlocksPointer(screenPosition);
             if (GuiViewport.Compact) return CompactScreens.BlocksGameplayPointer(screenPosition);
             if (!GuiViewport.SafeScreenRect.Contains(screenPosition)) return true;
             Vector2 point = DesignPoint(screenPosition);
@@ -64,6 +65,8 @@ namespace KurmaliKargo
             if (Game && Game.Phase == GamePhase.Shop) return;
             if (!Game || (Game.Phase != GamePhase.Menu && Game.Phase != GamePhase.Playing &&
                 Game.Phase != GamePhase.Result && Game.Phase != GamePhase.Shop)) return;
+            // Shifts use ShiftHUD's slim bar; only the comic bubbles come from here.
+            if (Game.InShift && Game.Phase == GamePhase.Playing) { Game.DrawFeelGUI(); return; }
             if (GuiViewport.Compact)
             {
                 CompactScreens.DrawHud(Game);

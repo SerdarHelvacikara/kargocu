@@ -30,7 +30,7 @@ namespace KurmaliKargo
         public int LastSpeedBonus { get; private set; }
         public int LastCareBonus { get; private set; }
         public int ScooterColorIndex { get; private set; }
-        public Vector3 TargetPosition => IsParcelDropped ? DroppedParcelPosition : HasPackage ? world.Stops[AwaitingOrderCheckpoint ? ChainCheckpoint : ActiveStopIndex] : PickupPosition;
+        public Vector3 TargetPosition => IsParcelDropped ? DroppedParcelPosition : HasPackage ? world.Stops[AwaitingOrderCheckpoint ? ChainCheckpoint : ActiveStopIndex] : shiftActive ? ShiftPickupTarget : PickupPosition;
         public Transform PlayerTransform => player;
         public Camera GameCamera { get; private set; }
         public bool IsMuted { get; private set; }
@@ -319,7 +319,9 @@ namespace KurmaliKargo
             hitCooldown -= Time.deltaTime;
             pickupDelay -= Time.deltaTime;
             wobble = Mathf.MoveTowards(wobble, 0, Time.deltaTime * 2.8f);
-            marker.gameObject.SetActive(Phase == GamePhase.Playing && deliveryCelebration <= 0);
+            // In a shift, waiting orders have their own rings; the main beacon marks the drop-off.
+            marker.gameObject.SetActive(Phase == GamePhase.Playing && deliveryCelebration <= 0 && (!shiftActive || HasPackage || IsParcelDropped));
+            TickBoardVisuals();
             if (Phase == GamePhase.Playing)
             {
                 marker.position = TargetPosition;
@@ -336,8 +338,8 @@ namespace KurmaliKargo
                     if (!HasPackage)
                     {
                         bool recovering = IsParcelDropped;
-                        Pickup();
-                        if (shiftActive && !recovering) ShiftPickedUp();
+                        if (!shiftActive || recovering) Pickup();
+                        else if (ClaimNearestShiftOrder()) { Pickup(); ShiftPickedUp(); }
                     }
                     else if (!TryOrderCheckpoint())
                     {
