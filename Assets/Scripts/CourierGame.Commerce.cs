@@ -168,6 +168,7 @@ namespace KurmaliKargo
             }
             if (!result.Completed || !result.RewardEarned || context.rewarded) return;
             context.rewarded = true;
+            if (GrantShiftReward(context.kind, context.amount)) { Save(); return; }
             if (context.kind == "rent")
             {
                 int old = VehicleIndex;

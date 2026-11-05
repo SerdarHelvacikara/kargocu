@@ -100,7 +100,7 @@ namespace KurmaliKargo
 
             if ((Game.Phase == GamePhase.Playing || Game.Phase == GamePhase.Shop) && Game.NoticeTime > 0 && !string.IsNullOrEmpty(Game.Notice))
             {
-                float noticeY = Game.Phase == GamePhase.Shop ? 690 : 155;
+                float noticeY = Game.Phase == GamePhase.Shop ? 690 : Game.InShift ? 214 : 155;
                 Panel(new Rect(350, noticeY, 580, 58), WithAlpha(ink, .96f), 18);
                 Text(new Rect(368, noticeY + 10, 544, 38), Game.Notice, 17, Color.white, true, TextAnchor.MiddleCenter);
             }
@@ -122,11 +122,11 @@ namespace KurmaliKargo
             Text(new Rect(76, 254, 398, 94), L("Kargo", "Delivery"), GameText.Turkish ? 85 : 70, teal, true);
             Text(new Rect(82, 363, 366, 63), L("Paketler sende.\nMahalle biraz karışık.", "Precious parcels.\nA wonderfully wobbly ride."), 23, ink);
 
-            Pill(new Rect(82, 446, 111, 30), L("3 TESLİMAT", "3 DELIVERIES"), pale, ink, 10);
-            Pill(new Rect(201, 446, 106, 30), L("TEK TUR", "ONE ROUND"), Hex(0xF9E5CE), ink, 10);
-            Pill(new Rect(315, 446, 151, 30), L("SAĞLAM GÖTÜR", "HANDLE WITH CARE"), Hex(0xF8E3DC), ink, 10);
+            Pill(new Rect(82, 446, 111, 30), L("4 DAKİKA", "4 MINUTES"), pale, ink, 10);
+            Pill(new Rect(201, 446, 106, 30), L("3 YILDIZ", "3 STARS"), Hex(0xF9E5CE), ink, 10);
+            Pill(new Rect(315, 446, 151, 30), L("GÜÇ KARTI SEÇ", "PICK POWER CARDS"), Hex(0xF8E3DC), ink, 10);
 
-            string primary = Game.HasSavedRun ? L("Teslimata devam et  →", "Continue delivering  →") : L("Teslimata başla  →", "Start delivering  →");
+            string primary = Game.HasSavedRun ? L("Devam et  →", "Continue  →") : L("Vardiyaya başla  →", "Start your shift  →");
             if (Button(new Rect(81, 501, 387, 65), primary, teal, Color.white, 22))
             {
                 if (Game.HasSavedRun) Game.ResumeRun(); else Game.StartRun();
@@ -154,7 +154,9 @@ namespace KurmaliKargo
 
             Panel(new Rect(240, 28, 548, 110), WithAlpha(cream, .98f), 20);
             string heading = Game.IsParcelDropped ? L("PAKETİN DÜŞTÜ", "PARCEL DROPPED") : Game.HasPackage ?
-                (Game.IsHeavyDelivery ? L("FABRİKA • AĞIR YÜK", "FACTORY • HEAVY LOAD") : L("TESLİMAT ", "DELIVERY ") + Mathf.Min(Game.Completed + 1, 3) + " / 3") : L("ÖNCE PAKETİNİ AL", "PICK UP YOUR PARCEL FIRST");
+                (Game.InShift ? L("SİPARİŞ #", "ORDER #") + (Game.ShiftDeliveries + 1) :
+                Game.IsHeavyDelivery ? L("FABRİKA • AĞIR YÜK", "FACTORY • HEAVY LOAD") : L("TESLİMAT ", "DELIVERY ") + Mathf.Min(Game.Completed + 1, 3) + " / 3") :
+                Game.InShift ? L("YENİ SİPARİŞ • PAKETİ AL", "NEW ORDER • PICK IT UP") : L("ÖNCE PAKETİNİ AL", "PICK UP YOUR PARCEL FIRST");
             Text(new Rect(260, 42, 400, 18), heading, 11, Game.IsParcelDropped ? coral : teal, true);
             string destination = Game.IsParcelDropped ? L("Düşen paketin", "Your dropped parcel") : Game.HasPackage ? Game.TargetName : Game.PickupName;
             Text(new Rect(260, 64, 398, 34), destination, 26, ink, true);

@@ -176,7 +176,7 @@ namespace KurmaliKargo
             if (Button(new Rect(24, H - 82, split - 48, 52), game.IsTurkish ? "TR  →  EN" : "EN  →  TR", Pale, Ink)) game.ToggleLanguage();
             Panel(new Rect(split, 20, W - split - 8, H - 40), Alpha(Cream, .96f));
             float x = split + 16, width = W - split - 40;
-            if (Button(new Rect(x, 52, width, 60), game.HasSavedRun ? L("Devam et  →", "Resume delivery  →") : L("Yola çık  →", "Start delivering  →"), Teal, Color.white, 20))
+            if (Button(new Rect(x, 52, width, 60), game.HasSavedRun ? L("Devam et  →", "Continue  →") : L("Vardiyaya başla  →", "Start your shift  →"), Teal, Color.white, 20))
             { if (game.HasSavedRun) game.ResumeRun(); else game.StartRun(); }
             if (Button(new Rect(x, 134, width, 56), L("Garaj ve şehir", "Garage & city") + (game.BusinessReadyCount > 0 ? " • " + game.BusinessReadyCount + L(" ödül", " rewards") : ""), Pale, Ink, 20)) game.OpenGarage();
             if (Button(new Rect(x, 212, width, 56), L("Ayarlar", "Settings"), Pale, Ink, 20)) game.OpenSettings();

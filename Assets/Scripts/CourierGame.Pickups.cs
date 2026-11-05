@@ -84,7 +84,7 @@ namespace KurmaliKargo
                 ? Vector3.Distance(PickupPosition, world.Stops[ChainCheckpoint]) + Vector3.Distance(world.Stops[ChainCheckpoint], finish)
                 : Vector3.Distance(PickupPosition, finish);
             float ordinary = smokeTest || persistenceTest ? 55 : Mathf.Clamp(22 + distance * 1.4f, 28, 75);
-            timeBudget = Mathf.Max(28, ordinary * DistrictClockScale * (IsUrgentOrder ? .68f : 1));
+            timeBudget = Mathf.Max(shiftActive ? 16 : 28, ordinary * DistrictClockScale * (IsUrgentOrder ? .68f : 1) * ShiftClockScale);
             TimeLeft = timeBudget;
         }
 

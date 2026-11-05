@@ -15,7 +15,7 @@ namespace KurmaliKargo.Editor
         {
             PlayerSettings.companyName = "KurmaliKargoPrototype";
             PlayerSettings.productName = "Kurmalı Kargo";
-            PlayerSettings.bundleVersion = "0.9.1";
+            PlayerSettings.bundleVersion = "0.10.0";
             PlayerSettings.defaultScreenWidth = 1280;
             PlayerSettings.defaultScreenHeight = 800;
             PlayerSettings.fullScreenMode = FullScreenMode.Windowed;
@@ -52,7 +52,7 @@ namespace KurmaliKargo.Editor
         public static void Build()
         {
             Prepare();
-            string output = Path.GetFullPath(Path.Combine(Application.dataPath,"../../Windows-v091/KurmaliKargo.exe"));
+            string output = Path.GetFullPath(Path.Combine(Application.dataPath,"../../Windows-v010/KurmaliKargo.exe"));
             Directory.CreateDirectory(Path.GetDirectoryName(output));
             var report = BuildPipeline.BuildPlayer(new BuildPlayerOptions {
                 scenes = new[]{"Assets/Scenes/Neighborhood.unity"},

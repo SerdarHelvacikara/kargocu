@@ -97,7 +97,9 @@ namespace KurmaliKargo
             LocalProgress.SetInt(DistrictKey, districtMask);
             LocalProgress.SetInt(DepotLevelKey, DepotLevel);
             SaveCommerceProgress();
-            if (runActive)
+            // Shifts are never resumable; their coins are banked per delivery.
+            if (shiftActive) savedRun = null;
+            else if (runActive)
             {
                 RunSnapshot current = CaptureRun();
                 if (ValidRun(current)) savedRun = current;
@@ -159,6 +161,12 @@ namespace KurmaliKargo
 
         public void ResumeRun()
         {
+            if (shiftActive && runActive)
+            {
+                ClearOverlays();
+                Phase = GamePhase.Playing;
+                return;
+            }
             RunSnapshot restore = runActive ? CaptureRun() : savedRun;
             if (!ValidRun(restore)) return;
             ApplyRun(restore);

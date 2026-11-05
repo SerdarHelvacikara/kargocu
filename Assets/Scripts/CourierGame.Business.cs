@@ -100,7 +100,7 @@ namespace KurmaliKargo
         void TickDogs(float dt)
         {
             if (!dogs || Phase != GamePhase.Playing || !streetEnabled) return;
-            dogs.ScaredOfCourier = DinosaurScaresDogs;
+            dogs.ScaredOfCourier = DinoScaresDogs;
             dogs.StandOffDistance = VehicleIndex == 3 ? 2.3f : VehicleIndex == 2 ? 2f : .95f;
             dogs.Tick(player.position, dt, ReducedMotion);
             if (!dogs.AnyChasing) { dogMusicBeat = 0; return; }

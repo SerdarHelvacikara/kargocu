@@ -5,7 +5,8 @@ using UnityEngine;
 
 namespace KurmaliKargo
 {
-    public enum GamePhase { Menu, Playing, Result, Shop, Garage, Settings, Privacy, Paused, Tutorial }
+    // New values go at the end: old run snapshots store the phase as an int.
+    public enum GamePhase { Menu, Playing, Result, Shop, Garage, Settings, Privacy, Paused, Tutorial, ShiftCard, ShiftEnd }
 
     /// <summary>Small, entirely local delivery loop. No networking or paid assets.</summary>
     public sealed partial class CourierGame : MonoBehaviour
@@ -42,7 +43,7 @@ namespace KurmaliKargo
         public float LastIntegrity { get; private set; } = 100;
         public string ParcelName => IsHeavyDelivery ? GameText.Pick("Fabrikanın zor yükü", "Factory heavy haul") : OrderName(CurrentOrder, HasPackage ? ActiveParcel : (ParcelKind)Mathf.Min(Completed, 2));
         public string ParcelHint => IsParcelDropped ? GameText.Pick("Geri dönüp ışıklı halkadan al; teslimata devam et.", "Go back to the glowing ring, collect it and carry on.") : OrderHint(HasPackage ? ActiveParcel : (ParcelKind)Mathf.Min(Completed, 2));
-        public float HandlingSpeed => (!HasPackage ? 5.1f : ActiveParcel == ParcelKind.Plant ? 4.6f : ActiveParcel == ParcelKind.TeaSet ? 5.3f : 5.1f) * VehicleSpeedScale * (dogs && streetEnabled ? dogs.SlowMultiplier : 1) * (HasPackage && IsHeavyDelivery ? .75f : 1) * incidents.SpeedScale(player.position);
+        public float HandlingSpeed => (!HasPackage ? 5.1f : ActiveParcel == ParcelKind.Plant ? 4.6f : ActiveParcel == ParcelKind.TeaSet ? 5.3f : 5.1f) * VehicleSpeedScale * (dogs && streetEnabled ? dogs.SlowMultiplier : 1) * (HasPackage && IsHeavyDelivery ? .75f : 1) * incidents.SpeedScale(player.position) * ShiftSpeedScale;
         public float HandlingAcceleration => (!HasPackage ? 32f : ActiveParcel == ParcelKind.Plant ? 13f : ActiveParcel == ParcelKind.Cake ? 24f : 28f) * VehicleAccelerationScale * (HasPackage && IsHeavyDelivery ? .7f : 1);
         public float Fragility => (ActiveParcel == ParcelKind.Plant ? .75f : ActiveParcel == ParcelKind.TeaSet ? 1.5f : 1.15f) * VehicleFragilityScale * OrderFragility;
         public ParcelVisual CargoVisual => parcelVisual;
@@ -96,6 +97,7 @@ namespace KurmaliKargo
             smokeTest = Array.Exists(Environment.GetCommandLineArgs(), a => a == "-smokeTest");
             bool persistenceWrite = Array.Exists(Environment.GetCommandLineArgs(), a => a == "-persistenceCheckWrite");
             persistenceTest = persistenceWrite || Array.Exists(Environment.GetCommandLineArgs(), a => a == "-persistenceCheckRead");
+            shiftTest = smokeTest && Array.Exists(Environment.GetCommandLineArgs(), a => a == "-shiftTest");
             IsPlaytest = !smokeTest && !persistenceTest && Array.Exists(Environment.GetCommandLineArgs(), a => a == "-playtest");
             LocalProgress.Configure(persistenceTest, persistenceWrite);
             GameText.Initialize(smokeTest);
@@ -137,11 +139,13 @@ namespace KurmaliKargo
             hud.OwnsColor = IsColorUnlocked;
             releasePanels = gameObject.AddComponent<ReleasePanels>();
             releasePanels.Game = this;
+            gameObject.AddComponent<ShiftHUD>().Game = this;
             Phase = GamePhase.Menu;
             LoadRun();
             InitializeCommerce();
             InitializeFeel();
-            if (smokeTest && Array.Exists(Environment.GetCommandLineArgs(), a => a == "-v08Test")) gameObject.AddComponent<CourierV08Test>();
+            if (shiftTest) gameObject.AddComponent<CourierShiftTest>();
+            else if (smokeTest && Array.Exists(Environment.GetCommandLineArgs(), a => a == "-v08Test")) gameObject.AddComponent<CourierV08Test>();
             else if (smokeTest) gameObject.AddComponent<CourierSmokeTest>();
             else if (persistenceTest) gameObject.AddComponent<CourierPersistenceTest>();
         }
@@ -325,10 +329,20 @@ namespace KurmaliKargo
                 markerMaterial.color = HasPackage || IsParcelDropped ? new Color(1f,.77f,.18f) : new Color(.12f,.78f,.69f);
                 if (HasPackage || IsParcelDropped) TimeLeft = Mathf.Max(0, TimeLeft - Time.deltaTime);
                 TickOrder(Time.deltaTime);
-                if (!smokeTest && !persistenceTest) MoveFromInput();
-                if (deliveryCelebration <= 0 && pickupDelay <= 0 && Vector3.Distance(Flat(player.position), Flat(TargetPosition)) < 1.28f)
+                TickShift(Time.deltaTime);
+                if (Phase == GamePhase.Playing && !smokeTest && !persistenceTest) MoveFromInput();
+                if (Phase == GamePhase.Playing && deliveryCelebration <= 0 && pickupDelay <= 0 && Vector3.Distance(Flat(player.position), Flat(TargetPosition)) < ReachRadius)
                 {
-                    if (!HasPackage) Pickup(); else if (!TryOrderCheckpoint()) CompleteDelivery();
+                    if (!HasPackage)
+                    {
+                        bool recovering = IsParcelDropped;
+                        Pickup();
+                        if (shiftActive && !recovering) ShiftPickedUp();
+                    }
+                    else if (!TryOrderCheckpoint())
+                    {
+                        if (shiftActive) CompleteShiftDelivery(); else CompleteDelivery();
+                    }
                 }
                 if (Time.unscaledTime >= nextAutosave) { nextAutosave = Time.unscaledTime + 8; Save(); }
             }
@@ -477,7 +491,8 @@ namespace KurmaliKargo
         void LateUpdate()
         {
             bool inGarage = Phase == GamePhase.Garage || (Phase == GamePhase.Shop && shopReturn == GamePhase.Garage);
-            bool close = Phase == GamePhase.Playing || Phase == GamePhase.Result || Phase == GamePhase.Paused;
+            bool close = Phase == GamePhase.Playing || Phase == GamePhase.Result || Phase == GamePhase.Paused ||
+                Phase == GamePhase.ShiftCard || Phase == GamePhase.ShiftEnd;
             Vector3 focus = inGarage ? garageVisual.Focus + GameCamera.transform.right * 2.3f : close ? player.position + new Vector3(0,0,1.5f) : menuCameraTarget;
             Vector3 target = focus - GameCamera.transform.forward * 42 + FeelCameraOffset;
             float desiredZoom = inGarage ? 7.5f : close ? (Screen.width/(float)Screen.height < 1.3f ? 11.8f : 10.3f) : 26f;
@@ -488,6 +503,12 @@ namespace KurmaliKargo
         }
 
         public void StartRun()
+        {
+            if (ShiftModeEnabled) StartShift(); else StartTour();
+        }
+
+        // The original three-delivery tour. Smoke and persistence tests still drive it.
+        void StartTour()
         {
             deliveryCelebration = 0;
             ResetFeel();
@@ -552,7 +573,7 @@ namespace KurmaliKargo
             if (hitCooldown > 0) return;
             bool hazard = obstacle.name.StartsWith("Hazard_", StringComparison.Ordinal);
             hitCooldown = 1.15f;
-            Cargo = Mathf.Max(0,Cargo-(hazard ? 18 : 10) * Fragility * VehicleImpactScale(Vector3.Dot(velocity, -normal)) * DepotImpactScale);
+            Cargo = Mathf.Max(0,Cargo-(hazard ? 18 : 10) * Fragility * VehicleImpactScale(Vector3.Dot(velocity, -normal)) * DepotImpactScale * ShiftDamageScale);
             wobble = 1;
             ImpactFeel();
             parcelVisual.OnImpact(Cargo);

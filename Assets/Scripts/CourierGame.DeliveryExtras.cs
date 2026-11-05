@@ -45,7 +45,7 @@ namespace KurmaliKargo
         public bool UsesWideVehicleBody => VehicleIndex >= 2;
         public bool UsesPhysicalSteering => VehicleIndex == 3 || VehicleIndex == 5;
         public bool DinosaurScaresDogs => VehicleIndex == 5;
-        public bool DinoScaresDogs => DinosaurScaresDogs;
+        public bool DinoScaresDogs => DinosaurScaresDogs || ShiftDogTreat;
         public int DeliveryMultiplier => VehicleIndex == 2 ? 2 : 1;
         public float VehicleSpeedScale => VehicleIndex == 5 ? .90f : VehicleIndex == 4 ? 1.12f : VehicleIndex == 1 ? 1.32f : VehicleIndex == 2 ? .88f : VehicleIndex == 3 ? 1.10f : 1;
         public float VehicleAccelerationScale => VehicleIndex == 5 ? .70f : VehicleIndex == 4 ? .90f : VehicleIndex == 1 ? 1.15f : VehicleIndex == 2 ? .65f : VehicleIndex == 3 ? .78f : 1;
