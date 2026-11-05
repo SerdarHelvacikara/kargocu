@@ -25,7 +25,7 @@ namespace KurmaliKargo
         // Flight has a high physical capsule, but its clearance sweep extends
         // down to the street so short fences do not become an accidental bypass.
         static readonly Vector3 DragonHalfSize = new Vector3(.72f, 1.60f, 1.68f);
-        static readonly Vector3 DinosaurHalfSize = new Vector3(.75f, 1.32f, 1.74f);
+        static readonly Vector3 DinosaurHalfSize = new Vector3(.74f, .62f, 1.32f); // rocket racer hull
 
         public StreetEvents StreetScene => streetEvents;
         public int VehicleIndex { get; private set; }
@@ -44,20 +44,20 @@ namespace KurmaliKargo
         public bool MonsterTruckOwned => monsterOwned;
         public bool UsesWideVehicleBody => VehicleIndex >= 2;
         public bool UsesPhysicalSteering => VehicleIndex == 3 || VehicleIndex == 5;
-        public bool DinosaurScaresDogs => VehicleIndex == 5;
+        public bool DinosaurScaresDogs => false; // the racer outruns dogs instead of scaring them
         public bool DinoScaresDogs => DinosaurScaresDogs || ShiftDogTreat;
         public int DeliveryMultiplier => DeliveryMultiplierFor(VehicleIndex);
         public static int DeliveryMultiplierFor(int index) => index == 2 ? 2 : 1;
         public float VehicleSpeedScale => VehicleSpeedFor(VehicleIndex);
-        public static float VehicleSpeedFor(int index) => index == 5 ? .90f : index == 4 ? 1.12f : index == 1 ? 1.32f : index == 2 ? .88f : index == 3 ? 1.10f : 1;
-        public float VehicleAccelerationScale => VehicleIndex == 5 ? .70f : VehicleIndex == 4 ? .90f : VehicleIndex == 1 ? 1.15f : VehicleIndex == 2 ? .65f : VehicleIndex == 3 ? .78f : 1;
+        public static float VehicleSpeedFor(int index) => index == 5 ? 1.48f : index == 4 ? 1.12f : index == 1 ? 1.32f : index == 2 ? .88f : index == 3 ? 1.10f : 1;
+        public float VehicleAccelerationScale => VehicleIndex == 5 ? 1.25f : VehicleIndex == 4 ? .90f : VehicleIndex == 1 ? 1.15f : VehicleIndex == 2 ? .65f : VehicleIndex == 3 ? .78f : 1;
         public float VehicleFragilityScale => VehicleFragilityFor(VehicleIndex);
-        public static float VehicleFragilityFor(int index) => index == 5 ? .45f : index == 4 ? .85f : index == 1 ? 1.25f : index == 2 ? .65f : index == 3 ? .85f : 1;
-        public float VehicleTurnRate => VehicleIndex == 5 ? 3.8f : VehicleIndex == 3 ? 4.5f : 13;
-        public float VehicleSteeringDegreesPerSecond => VehicleIndex == 5 ? 85 : 110;
+        public static float VehicleFragilityFor(int index) => index == 5 ? 1.05f : index == 4 ? .85f : index == 1 ? 1.25f : index == 2 ? .65f : index == 3 ? .85f : 1;
+        public float VehicleTurnRate => VehicleIndex == 5 ? 6f : VehicleIndex == 3 ? 4.5f : 13;
+        public float VehicleSteeringDegreesPerSecond => VehicleIndex == 5 ? 165 : 110;
         public float VehicleContactSeparation => VehicleIndex >= 4 ? 1.9f : VehicleIndex == 3 ? 1.65f : VehicleIndex == 2 ? 1.3f : controller ? controller.radius : .35f;
         Vector3 WideBodyHalfSize => VehicleIndex == 5 ? DinosaurHalfSize : VehicleIndex == 4 ? DragonHalfSize : VehicleIndex == 3 ? MonsterHalfSize : VanHalfSize;
-        float WideBodyCenterHeight => VehicleIndex == 5 ? 1.34f : VehicleIndex == 4 ? 1.63f : VehicleIndex == 3 ? .96f : .72f;
+        float WideBodyCenterHeight => VehicleIndex == 5 ? .66f : VehicleIndex == 4 ? 1.63f : VehicleIndex == 3 ? .96f : .72f;
         public int DeliveryBaseFee => DeliveryBaseFeeFor(VehicleIndex);
         public static int DeliveryBaseFeeFor(int index) => index == 5 ? 55 : index == 4 ? 50 : index == 2 ? 45 : index == 1 ? 35 : 40;
         public int LastBaseFee { get; private set; } = 40;
@@ -65,8 +65,8 @@ namespace KurmaliKargo
         public Vector3 DroppedParcelPosition { get; private set; }
         public string VehicleName => VehicleNameFor(VehicleIndex);
         public string VehicleHint => VehicleHintFor(VehicleIndex);
-        public string VehicleNameFor(int index) => index == 5 ? GameText.Pick("Nazik dev", "Gentle giant") : index == 4 ? GameText.Pick("Bulut kargocusu", "Cloud courier") : index == 3 ? GameText.Pick("Koca teker", "Big-wheel courier") : index == 2 ? GameText.Pick("Mini kargo van", "Little cargo van") : index == 1 ? GameText.Pick("Fırlama scooter", "Zip rider") : GameText.Pick("Tatlı scooter", "Easy rider");
-        public string VehicleHintFor(int index) => index == 5 ? GameText.Pick("Korunaklı, ağır adımlar • geniş dönüş • köpekler yol verir • 55 temel jeton", "Guarded cargo, heavy steps • wide turns • dogs give way • 55 base coins") : index == 4 ? GameText.Pick("Alçaktan uçar: sokak kolisi ve yol çalışmasını aşar • duvarları aşamaz • 50 temel jeton", "Low flight clears street crates and roadworks • walls still block • 50 base coins") : index == 3 ? GameText.Pick("Geniş dönüş • hafif darbeye dayanıklı, sert çarpışma pahalı • paket bağlı kalır", "Wide turns • gentle bumps cushioned, hard crashes costly • cargo stays strapped") : index == 2 ? GameText.Pick("Korunaklı, daha ağır • teslimat ücreti ve bonuslar ×2", "Protected cargo, heavier ride • delivery fee and bonuses ×2") : index == 1 ?
+        public string VehicleNameFor(int index) => index == 5 ? GameText.Pick("Roket araba", "Rocket racer") : index == 4 ? GameText.Pick("Bulut kargocusu", "Cloud courier") : index == 3 ? GameText.Pick("Koca teker", "Big-wheel courier") : index == 2 ? GameText.Pick("Mini kargo van", "Little cargo van") : index == 1 ? GameText.Pick("Fırlama scooter", "Zip rider") : GameText.Pick("Tatlı scooter", "Easy rider");
+        public string VehicleHintFor(int index) => index == 5 ? GameText.Pick("En hızlı araç • keskin direksiyon • köpekleri geride bırakır • 55 temel jeton", "Fastest ride • sharp steering • leaves dogs behind • 55 base coins") : index == 4 ? GameText.Pick("Alçaktan uçar: sokak kolisi ve yol çalışmasını aşar • duvarları aşamaz • 50 temel jeton", "Low flight clears street crates and roadworks • walls still block • 50 base coins") : index == 3 ? GameText.Pick("Geniş dönüş • hafif darbeye dayanıklı, sert çarpışma pahalı • paket bağlı kalır", "Wide turns • gentle bumps cushioned, hard crashes costly • cargo stays strapped") : index == 2 ? GameText.Pick("Korunaklı, daha ağır • teslimat ücreti ve bonuslar ×2", "Protected cargo, heavier ride • delivery fee and bonuses ×2") : index == 1 ?
             GameText.Pick("%32 hızlı • 35 temel jeton • sert darbede paket düşer", "32% faster • 35 base coins • hard crashes drop cargo") :
             GameText.Pick("Dengeli sürüş • 40 temel jeton • paket bağlı kalır", "Steady ride • 40 base coins • cargo stays strapped");
 

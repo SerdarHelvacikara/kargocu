@@ -81,6 +81,27 @@ namespace KurmaliKargo
                 "A damaged delivery still pays but breaks the streak");
             yield return ShotNow("1c-payout");
 
+            // The stray dog chases a parcel in hand and bites it when it catches up.
+            yield return PickUp();
+            int dogWallet = game.Coins;
+            game.SummonStrayDogForTest();
+            yield return WaitUntil(() => game.StrayDogVisible && game.StrayDogChasing, 2);
+            Check(game.StrayDogVisible, "A stray dog turns up while a parcel is in hand");
+            yield return WaitUntil(() => !game.StrayDogVisible || game.StrayDogChasing && game.ShiftStars == 3, .2f);
+            yield return new WaitForSecondsRealtime(1.0f);
+            yield return ShotNow("1d-dog-chase");
+            float cargoBefore = game.Cargo;
+            game.PlaceStrayDogForTest(game.PlayerTransform.position);
+            yield return WaitUntil(() => game.StrayBites > 0 || game.Coins > dogWallet, 1);
+            if (game.CardLevel(ShiftCard.DogTreat) > 0)
+                Check(game.StrayBites == 0 && game.Coins > dogWallet && game.Cargo == cargoBefore, "With dog treats the stray dog brings a tip instead of biting");
+            else
+                Check(game.StrayBites == 1 && game.Cargo < cargoBefore && game.HasPackage, "The stray dog bites the parcel when it catches the courier");
+            yield return ShotNow("1e-dog-bite");
+            game.PlaceForTest(game.TargetPosition);
+            yield return WaitUntil(() => !game.HasPackage, 3);
+            if (game.Phase == GamePhase.ShiftCard) game.ChooseShiftCard(0);
+
             for (int star = 2; star >= 0; star--)
             {
                 yield return PickUp();

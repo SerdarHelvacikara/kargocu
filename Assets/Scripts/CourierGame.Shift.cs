@@ -180,6 +180,7 @@ namespace KurmaliKargo
             shiftRandom = new System.Random(streetEvents.Seed ^ 0x51F7);
             savedRun = null;
             heavyIndex = -1;
+            ResetStrayDog();
             EnsureBoardVisuals();
             foreach (BoardOrder slot in board) slot.live = false;
             ResetCarry(); // spawns the first waiting order
@@ -304,6 +305,7 @@ namespace KurmaliKargo
                 PlayFeelPair(660, 990);
             }
             TickBoard(dt);
+            TickStrayDog(dt);
             if ((HasPackage || IsParcelDropped) && TimeLeft <= 0) { FailShiftOrder(false); return; }
             if (HasPackage && Cargo <= .5f) { FailShiftOrder(true); return; }
             if (shiftElapsed >= ShiftLength) EndShift(true);
@@ -444,6 +446,8 @@ namespace KurmaliKargo
             runActive = false;
             savedRun = null;
             AwardShiftRank(success);
+            if (strayDog) strayDog.gameObject.SetActive(false);
+            strayState = StrayState.Away;
             Phase = GamePhase.ShiftEnd;
             if (success) StartCoroutine(DeliveryJingle()); else PlayFeelPair(330, 220);
             Save();

@@ -168,6 +168,8 @@ namespace KurmaliKargo
                 Tag(Game.BoardPosition(i) + Vector3.up * 2.7f, Game.BoardLabel(i), Mathf.CeilToInt(left) + L(" sn", "s"), c,
                     Game.BoardLeft01(i), left < 6, false);
             }
+            if (Game.StrayDogVisible && Game.StrayDogChasing)
+                Tag(Game.StrayDogPosition + Vector3.up * 1.7f, L("KÖPEK!", "DOG!"), "", Coral, 1, true, false);
             if (Game.IsParcelDropped)
                 Tag(Game.DroppedParcelPosition + Vector3.up * 2.2f, L("DÜŞEN PAKET", "DROPPED"), "", Coral, 1, true, true);
             else if (Game.HasPackage)

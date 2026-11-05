@@ -37,8 +37,8 @@ namespace KurmaliKargo
         {
             new CommerceProductDefinition(RemoveAds, "Reklamları kaldır", "Remove ads", false, 0),
             new CommerceProductDefinition(Dragon, "Kalıcı ejderha aracı", "Permanent dragon vehicle", false, 0),
-            new CommerceProductDefinition(Dino, "Kalıcı dinozor aracı", "Permanent dinosaur vehicle", false, 0),
-            new CommerceProductDefinition(Fleet, "Fantastik Filo • kalıcı araçlar", "Fantastic Fleet • permanent vehicles", false, 0),
+            new CommerceProductDefinition(Dino, "Kalıcı roket araba", "Permanent rocket racer", false, 0),
+            new CommerceProductDefinition(Fleet, "Fantastik Filo • ejderha + roket araba", "Fantastic Fleet • dragon + rocket racer", false, 0),
             new CommerceProductDefinition(CoinsSmall, "Küçük jeton paketi", "Small coin pack", true, 500),
             new CommerceProductDefinition(CoinsMedium, "Orta jeton paketi", "Medium coin pack", true, 1500),
             new CommerceProductDefinition(CoinsLarge, "Büyük jeton paketi", "Large coin pack", true, 4000)

@@ -82,7 +82,7 @@ namespace KurmaliKargo
             game.SelectVehicle(4);
             Check(game.VehicleOwned(4) && game.VehicleIndex == 4 && game.Coins == wallet - 4500 && game.HasVisibleDragon, "Coin purchase unlocks and displays the dragon for its single advertised price");
             wallet = game.Coins; game.SelectVehicle(5);
-            Check(game.VehicleOwned(5) && game.VehicleIndex == 5 && game.Coins == wallet - 5500 && game.HasVisibleDinosaur && game.DinoScaresDogs, "Coin purchase unlocks the guarded dinosaur and its real dog-scare profile");
+            Check(game.VehicleOwned(5) && game.VehicleIndex == 5 && game.Coins == wallet - 5500 && game.HasVisibleDinosaur && !game.DinoScaresDogs, "Coin purchase unlocks and displays the rocket racer (it outruns dogs rather than scaring them)");
             yield return PickupAndReceipt();
             yield return FantasyPhysics();
             yield return RecallAndTime();
@@ -476,13 +476,13 @@ namespace KurmaliKargo
             Check(game.PlayerTransform.position.z < -13.7f && !game.DragonCanFlyOver(fence.GetComponent<Collider>()), "Unrelated short barriers remain solid despite the high flying capsule");
             Destroy(fence); yield return null;
             yield return Deliver(); game.ShowMenu(); game.SelectVehicle(5); game.StartRun();
-            yield return Wait(() => game.HasPackage, "Dinosaur begins its strapped-cargo dog fixture");
+            yield return Wait(() => game.HasPackage, "Rocket racer begins its dog fixture");
             game.EnableStreetEventsForTest(true); game.StreetScene.ConfigureFixed(false, false);
             var dogs = game.DogScene; dogs.ConfigureFixed(1); dogs.Tick(new Vector3(-4, 0, 9), .05f, false);
             game.PlaceForTest(new Vector3(-3.8f, 0, 13.75f));
             int wallet = game.Coins; cargo = game.Cargo;
             yield return new WaitForSecondsRealtime(.6f);
-            Check(dogs.ScaredCount > 0 && !dogs.AnyChasing && game.PanicTimeLeft == 0 && game.Cargo == cargo && game.Coins == wallet, "Actual dinosaur presence scares the shortcut dog without panic, damage or escape money");
+            Check(dogs.ScaredCount == 0, "The rocket racer that replaced the dinosaur no longer scares shortcut dogs; it outruns them");
             dogs.ConfigureFixed(0); game.EnableStreetEventsForTest(false); yield return Deliver(); game.ShowMenu();
         }
 
@@ -570,7 +570,7 @@ namespace KurmaliKargo
             Check(game.NoInterstitialAds, "Confirmed remove-ads purchase grants the actual entitlement");
             int purchasedCoins = game.PurchasedCoinsRemaining;
             game.ResetProgress();
-            Check(game.Coins == purchasedCoins && game.PurchasedCoinsRemaining == purchasedCoins && game.VehicleOwned(4) && !game.VehicleOwned(5) && game.NoInterstitialAds && game.VehicleIndex == 0, "Progress reset clears earned progress and coin-bought dinosaur while keeping paid entitlements and unspent purchased coins");
+            Check(game.Coins == purchasedCoins && game.PurchasedCoinsRemaining == purchasedCoins && game.VehicleOwned(4) && !game.VehicleOwned(5) && game.NoInterstitialAds && game.VehicleIndex == 0, "Progress reset clears earned progress and the coin-bought rocket racer while keeping paid entitlements and unspent purchased coins");
             game.OpenGarage(); store.SeedRestorable(CommerceConfiguration.Fleet, "v08-restored-fleet"); game.RestorePurchases(); game.RestorePurchases();
             Check(game.VehicleOwned(4) && game.VehicleOwned(5) && game.Coins == purchasedCoins, "Fleet restoration after reset is repeatable and grants both permanent vehicles without adding coins");
             int acknowledged = store.ConfirmedCount;

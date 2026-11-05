@@ -36,7 +36,7 @@ namespace KurmaliKargo
             new Offer { key = "gift", tint = Coral, art = 0 },
             new Offer { key = CommerceConfiguration.Fleet, tint = Violet, art = 1, badge = "deal" },
             new Offer { key = CommerceConfiguration.Dragon, tint = Hex(0xA69BCB), art = 2 },
-            new Offer { key = CommerceConfiguration.Dino, tint = Leaf, art = 3 },
+            new Offer { key = CommerceConfiguration.Dino, tint = Hex(0xF6C7A8), art = 3 },
             new Offer { key = CommerceConfiguration.CoinsSmall, tint = Gold, art = 4 },
             new Offer { key = CommerceConfiguration.CoinsMedium, tint = Gold, art = 5, badge = "popular" },
             new Offer { key = CommerceConfiguration.CoinsLarge, tint = Gold, art = 6, badge = "value" },
@@ -50,6 +50,8 @@ namespace KurmaliKargo
             if (!Game) return;
             if (Game.Phase != GamePhase.Menu) return;
             if (Current != Page.Home && Input.GetKeyDown(KeyCode.Escape)) Current = Page.Home;
+            // Real 3D shots of each ride for the cards; cheap after the first call.
+            if (Current == Page.Garage || Current == Page.Shop) Game.RefreshVehiclePhotos();
         }
 
         public void ShowPage(Page page) { if (Game && Game.Phase == GamePhase.Menu) Current = page; }
@@ -286,7 +288,7 @@ namespace KurmaliKargo
             if (key == "gift") return L("Günlük hediye", "Daily gift");
             if (key == CommerceConfiguration.Fleet) return L("Fantastik Filo", "Fantasy Fleet");
             if (key == CommerceConfiguration.Dragon) return L("Kargo Ejderhası", "Cargo Dragon");
-            if (key == CommerceConfiguration.Dino) return L("Kurye Dinozor", "Courier Dino");
+            if (key == CommerceConfiguration.Dino) return L("Roket Araba", "Rocket Racer");
             return null;
         }
 
@@ -294,7 +296,7 @@ namespace KurmaliKargo
         {
             var def = CommerceConfiguration.Find(key);
             if (def != null && def.Consumable) return def.CoinAmount.ToString("N0") + L(" jeton", " coins");
-            if (key == CommerceConfiguration.Fleet) return L("Ejderha + dinozor, kalıcı", "Dragon + dinosaur, forever");
+            if (key == CommerceConfiguration.Fleet) return L("Ejderha + roket araba, kalıcı", "Dragon + rocket racer, forever");
             if (key == CommerceConfiguration.RemoveAds) return L("Ara reklamlar kapanır", "No more interstitials");
             return L("Kalıcı fantastik araç", "Permanent fantasy ride");
         }
@@ -307,11 +309,13 @@ namespace KurmaliKargo
             {
                 case 0: DrawGift(new Rect(c.x - s * .5f, c.y - s * .5f, s, s)); break;
                 case 1:
+                    Rect left = new Rect(art.x, art.y, art.width * .58f, art.height), right = new Rect(art.x + art.width * .42f, art.y, art.width * .58f, art.height);
+                    if (Photo(left, 4) & Photo(right, 5)) break;
                     DrawCreature(c + new Vector2(-s * .3f, 0), s * .72f, Hex(0xC4B8EC), true);
                     DrawCreature(c + new Vector2(s * .3f, s * .04f), s * .72f, Hex(0x9FD3A6), false);
                     break;
-                case 2: DrawCreature(c, s, Hex(0xC4B8EC), true); break;
-                case 3: DrawCreature(c, s, Hex(0x9FD3A6), false); break;
+                case 2: if (!Photo(art, 4)) DrawCreature(c, s, Hex(0xC4B8EC), true); break;
+                case 3: if (!Photo(art, 5)) DrawCreature(c, s, Hex(0x9FD3A6), false); break;
                 case 7:
                     ToyGui.Icon(new Rect(c.x - s * .5f, c.y - s * .5f, s, s), ToyGui.Disc, Color.white);
                     ToyGui.Text(new Rect(c.x - s * .5f, c.y - s * .5f, s, s), "AD", Mathf.RoundToInt(s * .38f), Sky, true, TextAnchor.MiddleCenter);
@@ -457,7 +461,7 @@ namespace KurmaliKargo
             ToyGui.Raised(r, Cream);
             Rect art = new Rect(r.x, r.y, r.width, r.height * .40f);
             ToyGui.Panel(art, VehicleTint(i));
-            DrawVehicleArt(art, i);
+            if (!Photo(art, i)) DrawVehicleArt(art, i);
             if (i >= 4)
             {
                 Rect tag = new Rect(art.xMax - 96 * U - 10, art.y + 8 * U, 90 * U + 6, 24 * U + 4);
@@ -514,8 +518,16 @@ namespace KurmaliKargo
             ToyGui.Thin(new Rect(bar.x, bar.y, Mathf.Max(6, bar.width * Mathf.Clamp01(value)), bar.height), color);
         }
 
+        bool Photo(Rect area, int vehicle)
+        {
+            Texture photo = Game.VehiclePhoto(vehicle);
+            if (!photo) return false;
+            GUI.DrawTexture(new Rect(area.x + 4, area.y + 4, area.width - 8, area.height - 8), photo, ScaleMode.ScaleToFit, true);
+            return true;
+        }
+
         static Color VehicleTint(int i) => i == 0 ? Hex(0x8FD3C8) : i == 1 ? Hex(0xF4B39C) : i == 2 ? Hex(0xB7D3EE) :
-            i == 3 ? Hex(0xF2D18A) : i == 4 ? Hex(0xC9C0EA) : Hex(0xB5DDB0);
+            i == 3 ? Hex(0xF2D18A) : i == 4 ? Hex(0xC9C0EA) : Hex(0xF6C7A8);
 
         void DrawVehicleArt(Rect art, int i)
         {

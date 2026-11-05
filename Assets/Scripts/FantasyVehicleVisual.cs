@@ -8,10 +8,11 @@ namespace KurmaliKargo
         public Transform CargoAnchor { get; private set; }
         public bool IsDragon { get; private set; }
         public bool ParachuteVisible => parachute && parachute.gameObject.activeSelf;
-        Transform body, leftWing, rightWing, tail, parachute;
+        Transform body, leftWing, rightWing, tail, parachute, flames;
+        Transform[] wheels;
         readonly Transform[] legs = new Transform[4];
         Material paint;
-        float gait, parachuteTime, wingFold;
+        float gait, parachuteTime, wingFold, wheelSpin;
         Vector3 parachuteDestination;
         static readonly Color Cream = ToyGeometry.Hex("FFF0D2");
         static readonly Color Ink = ToyGeometry.Hex("365566");
@@ -21,7 +22,7 @@ namespace KurmaliKargo
 
         public static FantasyVehicleVisual Create(Transform parent, bool dragon)
         {
-            Transform root = ToyGeometry.Group(parent, dragon ? "Cloud parcel dragon" : "Gentle parcel dinosaur", Vector3.zero);
+            Transform root = ToyGeometry.Group(parent, dragon ? "Cloud parcel dragon" : "Rocket parcel racer", Vector3.zero);
             var creature = root.gameObject.AddComponent<FantasyVehicleVisual>();
             creature.IsDragon = dragon;
             creature.Build();
@@ -31,12 +32,12 @@ namespace KurmaliKargo
         void Build()
         {
             paint = new Material(Shader.Find("Standard"));
-            paint.name = IsDragon ? "Personal cloud dragon paint" : "Personal gentle dinosaur paint";
-            paint.color = ToyGeometry.Hex(IsDragon ? "B1A1D5" : "A5C89E");
+            paint.name = IsDragon ? "Personal cloud dragon paint" : "Personal rocket racer paint";
+            paint.color = ToyGeometry.Hex(IsDragon ? "B1A1D5" : "E8574A");
             paint.SetFloat("_Glossiness", .12f);
             paint.SetFloat("_SpecularHighlights", 0);
             body = ToyGeometry.Group(transform, "Soft courier body", Vector3.zero);
-            if (IsDragon) BuildDragon(); else BuildDinosaur();
+            if (IsDragon) BuildDragon(); else BuildRacer();
             BuildRider();
             if (IsDragon) BuildParachute();
         }
@@ -80,38 +81,49 @@ namespace KurmaliKargo
             return wing;
         }
 
-        void BuildDinosaur()
+        // The non-dragon fantasy ride is a cartoon rocket racer: low, wide-wheeled,
+        // with a gold spoiler and exhaust flames that grow with speed.
+        void BuildRacer()
         {
-            Paint(ToyGeometry.Sphere(body, "Squishy dinosaur body", new Vector3(0, 1.03f, -.10f), new Vector3(1.27f, 1.13f, 1.57f), Cream));
-            ToyGeometry.Sphere(body, "Cream dinosaur belly", new Vector3(0, .89f, .45f), new Vector3(.90f, .81f, .49f), Cream);
-            Paint(ToyGeometry.Capsule(body, "Soft upright neck", new Vector3(0, 1.48f, .57f), new Vector3(.59f, .85f, .61f), Cream));
-            Paint(ToyGeometry.Sphere(body, "Big gentle dinosaur head", new Vector3(0, 1.98f, .78f), new Vector3(.97f, .80f, .97f), Cream));
-            ToyGeometry.Sphere(body, "Cream dinosaur snout", new Vector3(0, 1.81f, 1.13f), new Vector3(.86f, .40f, .54f), Cream);
-            Face(body, 2.03f, 1.196f, .27f);
+            Paint(ToyGeometry.Box(body, "Racer body", new Vector3(0, .42f, 0), new Vector3(1.05f, .34f, 2.05f), Cream));
+            Paint(ToyGeometry.Sphere(body, "Racer nose cone", new Vector3(0, .42f, 1.02f), new Vector3(.86f, .3f, .72f), Cream));
+            Paint(ToyGeometry.Box(body, "Racer side pod", new Vector3(-.5f, .38f, -.15f), new Vector3(.3f, .28f, 1.1f), Cream));
+            Paint(ToyGeometry.Box(body, "Racer side pod", new Vector3(.5f, .38f, -.15f), new Vector3(.3f, .28f, 1.1f), Cream));
+            ToyGeometry.Box(body, "Racing stripe", new Vector3(-.13f, .6f, .1f), new Vector3(.12f, .02f, 1.9f), Cream);
+            ToyGeometry.Box(body, "Racing stripe", new Vector3(.13f, .6f, .1f), new Vector3(.12f, .02f, 1.9f), Cream);
+            ToyGeometry.Sphere(body, "Race number roundel", new Vector3(.54f, .45f, .35f), new Vector3(.04f, .26f, .26f), Cream);
+            ToyGeometry.Sphere(body, "Race number roundel", new Vector3(-.54f, .45f, .35f), new Vector3(.04f, .26f, .26f), Cream);
+            ToyGeometry.Box(body, "Cockpit rim", new Vector3(0, .62f, -.15f), new Vector3(.62f, .1f, .8f), Ink);
+            ToyGeometry.Sphere(body, "Windscreen bubble", new Vector3(0, .7f, .3f), new Vector3(.55f, .3f, .3f), ToyGeometry.Hex("BFE3EE"));
+            // Wheels: bigger at the back, like a proper racer.
+            wheels = new Transform[4];
+            for (int i = 0; i < 4; i++)
+            {
+                bool rear = i >= 2;
+                float side = i % 2 == 0 ? -1 : 1, size = rear ? .62f : .5f;
+                Transform wheel = ToyGeometry.Group(body, "Racer wheel", new Vector3(side * .68f, size * .5f, rear ? -.68f : .72f));
+                Transform tyre = ToyGeometry.Cylinder(wheel, "Racer tyre", Vector3.zero, new Vector3(size, .28f, size), Ink);
+                tyre.localRotation = Quaternion.Euler(0, 0, 90);
+                Transform hub = ToyGeometry.Cylinder(wheel, "Gold hub", new Vector3(side * .15f, 0, 0), new Vector3(size * .45f, .02f, size * .45f), Gold);
+                hub.localRotation = Quaternion.Euler(0, 0, 90);
+                ToyGeometry.Box(wheel, "Hub spoke", new Vector3(side * .16f, 0, 0), new Vector3(.02f, size * .5f, .06f), Cream);
+                wheels[i] = wheel;
+            }
+            foreach (float side in new[] { -1f, 1f })
+                ToyGeometry.Box(body, "Spoiler post", new Vector3(side * .32f, .78f, -.95f), new Vector3(.07f, .36f, .1f), Ink);
+            ToyGeometry.Box(body, "Gold rear spoiler", new Vector3(0, .98f, -1.0f), new Vector3(1.3f, .07f, .34f), Gold);
+            ToyGeometry.Box(body, "Spoiler end plate", new Vector3(-.66f, .95f, -1.0f), new Vector3(.04f, .2f, .36f), Coral);
+            ToyGeometry.Box(body, "Spoiler end plate", new Vector3(.66f, .95f, -1.0f), new Vector3(.04f, .2f, .36f), Coral);
+            flames = ToyGeometry.Group(body, "Exhaust flames", new Vector3(0, .42f, -1.08f));
             foreach (float side in new[] { -1f, 1f })
             {
-                ToyGeometry.Sphere(body, "Dinosaur nostril", new Vector3(side * .21f, 1.91f, 1.40f), new Vector3(.065f, .045f, .025f), Ink);
-                ToyGeometry.Sphere(body, "Rosy dinosaur cheek", new Vector3(side * .38f, 1.87f, 1.18f), new Vector3(.15f, .10f, .045f), Coral);
-                Transform arm = ToyGeometry.Capsule(body, "Tiny helpful dinosaur arm", new Vector3(side * .59f, 1.20f, .36f), new Vector3(.22f, .45f, .25f), Cream);
-                arm.localRotation = Quaternion.Euler(-35, 0, side * 22);
-                for (int i = 0; i < 2; i++)
-                {
-                    Transform leg = ToyGeometry.Group(body, "Sturdy soft dinosaur foot", new Vector3(side * .43f, .40f, i == 0 ? -.48f : .40f));
-                    legs[(side < 0 ? 0 : 2) + i] = leg;
-                    Paint(ToyGeometry.Capsule(leg, "Chunky dinosaur leg", Vector3.zero, new Vector3(.37f, .62f, .43f), Cream));
-                    ToyGeometry.Sphere(leg, "Cream dinosaur toe", new Vector3(0, -.26f, .13f), new Vector3(.40f, .18f, .48f), Cream);
-                }
+                ToyGeometry.Cylinder(body, "Exhaust pipe", new Vector3(side * .22f, .42f, -1.02f), new Vector3(.14f, .05f, .14f), ToyGeometry.Hex("C9CED3")).localRotation = Quaternion.Euler(90, 0, 0);
+                ToyGeometry.Sphere(flames, "Exhaust flame", new Vector3(side * .22f, 0, -.12f), new Vector3(.16f, .16f, .3f), Gold);
+                ToyGeometry.Sphere(flames, "Exhaust flame core", new Vector3(side * .22f, 0, -.06f), new Vector3(.09f, .09f, .16f), Coral);
             }
-            tail = ToyGeometry.Group(body, "Dinosaur wagging tail", new Vector3(0, 1.03f, -.72f));
-            Transform baseTail = ToyGeometry.Capsule(tail, "Plump dinosaur tail", new Vector3(0, -.04f, -.32f), new Vector3(.48f, .85f, .44f), Cream);
-            baseTail.localRotation = Quaternion.Euler(80, 0, 0);
-            Paint(baseTail);
-            Paint(ToyGeometry.Sphere(tail, "Round dinosaur tail tip", new Vector3(0, .02f, -.77f), new Vector3(.28f, .24f, .48f), Cream));
-            for (int i = 0; i < 5; i++)
-                ToyGeometry.Sphere(body, "Coral soft back plate", new Vector3(0, 1.58f - i * .035f, .08f - i * .26f), new Vector3(.16f, .27f, .23f), Coral);
-            Saddle(new Vector3(0, 1.60f, -.33f), 1.00f, .95f);
-            ToyGeometry.Sphere(body, "Cream courier helmet", new Vector3(0, 2.39f, .74f), new Vector3(.80f, .18f, .73f), Cream);
-            ToyGeometry.Box(body, "Helmet parcel badge", new Vector3(0, 2.39f, 1.11f), new Vector3(.18f, .12f, .035f), Gold);
+            // A small parcel rack behind the cockpit.
+            ToyGeometry.Box(body, "Parcel rack", new Vector3(0, .62f, -.62f), new Vector3(.62f, .06f, .5f), Ink);
+            CargoAnchor = ToyGeometry.Group(body, "Racer cargo anchor", new Vector3(0, .66f, -.62f));
         }
 
         static void Face(Transform parent, float y, float z, float spacing)
@@ -139,8 +151,8 @@ namespace KurmaliKargo
 
         void BuildRider()
         {
-            float y = IsDragon ? 2.41f : 1.68f;
-            Transform rider = ToyGeometry.Group(body, "Tiny helmeted parcel rider", new Vector3(0, y, -.72f));
+            float y = IsDragon ? 2.41f : .5f;
+            Transform rider = ToyGeometry.Group(body, "Tiny helmeted parcel rider", new Vector3(0, y, IsDragon ? -.72f : -.12f));
             ToyGeometry.Capsule(rider, "Courier jacket", new Vector3(0, .22f, 0), new Vector3(.35f, .38f, .32f), Coral);
             ToyGeometry.Sphere(rider, "Courier face", new Vector3(0, .52f, .035f), new Vector3(.31f, .33f, .30f), ToyGeometry.Hex("EDBB99"));
             ToyGeometry.Sphere(rider, "Cream courier helmet", new Vector3(0, .67f, 0), new Vector3(.38f, .18f, .35f), Cream);
@@ -176,7 +188,7 @@ namespace KurmaliKargo
 
         public void StopParachute() { if (parachute) parachute.gameObject.SetActive(false); }
 
-        public void SetColor(Color color) { if (paint) paint.color = Color.Lerp(color, IsDragon ? Purple : ToyGeometry.Hex("B9D5A1"), .38f); }
+        public void SetColor(Color color) { if (paint) paint.color = Color.Lerp(color, IsDragon ? Purple : ToyGeometry.Hex("E8574A"), IsDragon ? .38f : .72f); }
         void Paint(Transform part) { part.GetComponent<Renderer>().sharedMaterial = paint; }
 
         public void Animate(float speed01, float turn01, bool reducedMotion, bool animate)
@@ -184,7 +196,7 @@ namespace KurmaliKargo
             float speed = Mathf.Clamp01(speed01);
             if (animate && !reducedMotion) gait += Time.deltaTime * (IsDragon ? 4.8f : 3 + speed * 7);
             float wave = reducedMotion ? 0 : Mathf.Sin(gait);
-            body.localPosition = new Vector3(0, reducedMotion ? 0 : wave * (IsDragon ? .065f : .024f * speed), 0);
+            body.localPosition = new Vector3(0, reducedMotion ? 0 : wave * (IsDragon ? .065f : .012f * speed), 0);
             body.localRotation = Quaternion.Euler(0, 0, reducedMotion ? 0 : -Mathf.Clamp(turn01, -1, 1) * 3);
             // Wings fold up while riding so the dragon fits the same lane as every
             // other vehicle; they open again when it slows down or stops.
@@ -202,6 +214,13 @@ namespace KurmaliKargo
                 rightWing.localScale = new Vector3(Mathf.Lerp(1, .5f, wingFold), 1, 1);
             }
             if (tail) tail.localRotation = Quaternion.Euler(0, reducedMotion ? 0 : wave * 5 * (IsDragon ? 1 : speed), 0);
+            if (wheels != null)
+            {
+                if (animate && !reducedMotion) wheelSpin = Mathf.Repeat(wheelSpin + Time.deltaTime * speed * 1100, 360);
+                foreach (Transform wheel in wheels) wheel.localRotation = Quaternion.Euler(wheelSpin, 0, 0);
+            }
+            if (flames)
+                flames.localScale = Vector3.one * (reducedMotion ? .6f : Mathf.Lerp(.3f, 1.35f, speed) * (1 + .18f * Mathf.Sin(Time.time * 41)));
             for (int i = 0; i < legs.Length; i++)
                 if (legs[i]) legs[i].localRotation = Quaternion.Euler(reducedMotion ? 0 : Mathf.Sin(gait + (i % 3 == 0 ? 0 : Mathf.PI)) * speed * 12, 0, 0);
             if (!parachute || !parachute.gameObject.activeSelf) return;
