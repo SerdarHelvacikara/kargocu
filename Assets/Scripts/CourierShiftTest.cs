@@ -134,7 +134,27 @@ namespace KurmaliKargo
             game.PurchaseProduct(CommerceConfiguration.CoinsSmall);
             yield return null;
             Check(game.Coins == wallet + 500, "A coin pack can be bought straight from the lobby shop");
+
+            game.Lobby.ShowPage(LobbyUI.Page.Garage);
+            yield return Shot("7-garage");
+            wallet = game.Coins;
+            game.SelectVehicle(2);
+            Check(game.VehicleIndex == 2 && game.VehicleOwned(2) && game.Coins == wallet - game.VehiclePrice(2), "The lobby garage buys and equips the van");
+            game.SelectVehicle(0);
+            int depot = game.DepotLevel;
+            game.UpgradeDepot();
+            Check(game.DepotLevel == depot + 1, "The depot can be upgraded from the lobby");
+
+            game.Lobby.ShowPage(LobbyUI.Page.City);
+            yield return Shot("8-city");
+            Check(!game.DistrictOwned(1) && game.ShiftDistrict == 0, "Only the starting district is open on a fresh profile");
+            game.UnlockDistrict(1);
+            Check(game.DistrictOwned(1) && game.ShiftDistrict == 1, "Opening a district with coins makes it the shift district");
             game.Lobby.ShowPage(LobbyUI.Page.Home);
+            game.StartRun();
+            Check(game.InShift && game.DistrictIndex == 1, "The next shift starts in the picked district");
+            if (game.Phase == GamePhase.ShiftCard) game.ChooseShiftCard(0);
+            yield return Shot("9-district-shift");
             Finish();
         }
 

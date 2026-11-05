@@ -6,7 +6,7 @@ namespace KurmaliKargo
     /// <summary>Courier rank (lifetime shift XP) and the rewarded free gift shown in the lobby.</summary>
     public sealed partial class CourierGame
     {
-        const string RankKey = "kr_rank_xp", GiftKey = "kr_gift_ready_utc";
+        const string RankKey = "kr_rank_xp", GiftKey = "kr_gift_ready_utc", DistrictPickKey = "kr_district_pick";
         const double GiftCooldownHours = 4;
         int rankXp, lastRankGain, lastRankBefore = 1, shiftRankAwarded;
         long giftReadyTicks;
@@ -36,9 +36,10 @@ namespace KurmaliKargo
 
         void LoadLobby()
         {
-            rankXp = 0; giftReadyTicks = 0;
+            rankXp = 0; giftReadyTicks = 0; districtPick = 0;
             if (smokeTest) return;
             rankXp = Mathf.Clamp(LocalProgress.GetInt(RankKey, 0), 0, 10000000);
+            districtPick = Mathf.Clamp(LocalProgress.GetInt(DistrictPickKey, 0), 0, DistrictCount - 1);
             // A clock moved backwards cannot push the gift further than one cooldown away.
             if (long.TryParse(LocalProgress.GetString(GiftKey, "0"), out long ticks))
                 giftReadyTicks = Math.Min(ticks, DateTime.UtcNow.Ticks + TimeSpan.FromHours(GiftCooldownHours).Ticks);
@@ -48,14 +49,16 @@ namespace KurmaliKargo
         {
             if (smokeTest) return;
             LocalProgress.SetInt(RankKey, rankXp);
+            LocalProgress.SetInt(DistrictPickKey, districtPick);
             LocalProgress.SetString(GiftKey, giftReadyTicks.ToString());
         }
 
         void ResetLobby()
         {
-            rankXp = lastRankGain = 0; lastRankBefore = 1; giftReadyTicks = 0;
+            rankXp = lastRankGain = 0; lastRankBefore = 1; giftReadyTicks = 0; districtPick = 0;
             if (smokeTest) return;
             LocalProgress.DeleteKey(RankKey);
+            LocalProgress.DeleteKey(DistrictPickKey);
             LocalProgress.DeleteKey(GiftKey);
         }
 
@@ -71,6 +74,7 @@ namespace KurmaliKargo
             rankXp = Mathf.Min(10000000, rankXp + gain);
             if (Rank > lastRankBefore)
                 Notify(GameText.Pick("RÜTBE ATLADIN! Kurye rütbesi ", "RANK UP! Courier rank ") + Rank);
+            UnlockDistrictsByRank();
         }
 
         public void ClaimGift() { if (CanClaimGift) RequestReward("gift", -1, GiftAmount); }

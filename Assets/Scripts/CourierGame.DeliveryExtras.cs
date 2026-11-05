@@ -46,16 +46,20 @@ namespace KurmaliKargo
         public bool UsesPhysicalSteering => VehicleIndex == 3 || VehicleIndex == 5;
         public bool DinosaurScaresDogs => VehicleIndex == 5;
         public bool DinoScaresDogs => DinosaurScaresDogs || ShiftDogTreat;
-        public int DeliveryMultiplier => VehicleIndex == 2 ? 2 : 1;
-        public float VehicleSpeedScale => VehicleIndex == 5 ? .90f : VehicleIndex == 4 ? 1.12f : VehicleIndex == 1 ? 1.32f : VehicleIndex == 2 ? .88f : VehicleIndex == 3 ? 1.10f : 1;
+        public int DeliveryMultiplier => DeliveryMultiplierFor(VehicleIndex);
+        public static int DeliveryMultiplierFor(int index) => index == 2 ? 2 : 1;
+        public float VehicleSpeedScale => VehicleSpeedFor(VehicleIndex);
+        public static float VehicleSpeedFor(int index) => index == 5 ? .90f : index == 4 ? 1.12f : index == 1 ? 1.32f : index == 2 ? .88f : index == 3 ? 1.10f : 1;
         public float VehicleAccelerationScale => VehicleIndex == 5 ? .70f : VehicleIndex == 4 ? .90f : VehicleIndex == 1 ? 1.15f : VehicleIndex == 2 ? .65f : VehicleIndex == 3 ? .78f : 1;
-        public float VehicleFragilityScale => VehicleIndex == 5 ? .45f : VehicleIndex == 4 ? .85f : VehicleIndex == 1 ? 1.25f : VehicleIndex == 2 ? .65f : VehicleIndex == 3 ? .85f : 1;
+        public float VehicleFragilityScale => VehicleFragilityFor(VehicleIndex);
+        public static float VehicleFragilityFor(int index) => index == 5 ? .45f : index == 4 ? .85f : index == 1 ? 1.25f : index == 2 ? .65f : index == 3 ? .85f : 1;
         public float VehicleTurnRate => VehicleIndex == 5 ? 3.8f : VehicleIndex == 3 ? 4.5f : 13;
         public float VehicleSteeringDegreesPerSecond => VehicleIndex == 5 ? 85 : 110;
         public float VehicleContactSeparation => VehicleIndex >= 4 ? 1.9f : VehicleIndex == 3 ? 1.65f : VehicleIndex == 2 ? 1.3f : controller ? controller.radius : .35f;
         Vector3 WideBodyHalfSize => VehicleIndex == 5 ? DinosaurHalfSize : VehicleIndex == 4 ? DragonHalfSize : VehicleIndex == 3 ? MonsterHalfSize : VanHalfSize;
         float WideBodyCenterHeight => VehicleIndex == 5 ? 1.34f : VehicleIndex == 4 ? 1.63f : VehicleIndex == 3 ? .96f : .72f;
-        public int DeliveryBaseFee => VehicleIndex == 5 ? 55 : VehicleIndex == 4 ? 50 : VehicleIndex == 2 ? 45 : VehicleIndex == 1 ? 35 : 40;
+        public int DeliveryBaseFee => DeliveryBaseFeeFor(VehicleIndex);
+        public static int DeliveryBaseFeeFor(int index) => index == 5 ? 55 : index == 4 ? 50 : index == 2 ? 45 : index == 1 ? 35 : 40;
         public int LastBaseFee { get; private set; } = 40;
         public bool IsParcelDropped { get; private set; }
         public Vector3 DroppedParcelPosition { get; private set; }

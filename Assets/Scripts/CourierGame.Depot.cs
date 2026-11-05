@@ -14,7 +14,7 @@ namespace KurmaliKargo
 
         public void UpgradeDepot()
         {
-            if (Phase != GamePhase.Garage || DepotLevel >= MaxDepotLevel || Coins < DepotPrice) return;
+            if ((Phase != GamePhase.Garage && Phase != GamePhase.Menu) || DepotLevel >= MaxDepotLevel || Coins < DepotPrice) return;
             SpendCoins(DepotPrice);
             DepotLevel++;
             RefreshGarage();

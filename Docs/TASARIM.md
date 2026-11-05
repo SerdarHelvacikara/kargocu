@@ -70,7 +70,11 @@ Her kartın 3 seviyesi var. Aynı kartı tekrar seçmek onu güçlendirir.
 
 ## 6. Şehir: oynadıkça büyüyen tek dünya
 
-- Bölgeler menüden **seçilmez**. Tek, kesintisiz bir şehir var.
+- **Şu anki durum (5 Kasım 2026):** Bölgeler rütbeyle kendiliğinden açılır
+  (Çarşı 3, Çin Mahallesi 5, Plaza 8) ya da jetonla erken açılır. Açılan son
+  bölge otomatik olarak vardiya bölgesi olur; Şehir sayfasından değiştirilebilir.
+  Bölgeler hâlâ aynı alana yüklenen ayrı haritalar.
+- **Hedef:** Bölgeler menüden **seçilmez**. Tek, kesintisiz bir şehir var.
 - Kilitli bölge haritada görünür, bariyerin arkasındadır
   ("Kurye rütbesi 5'te açılır").
 - Açılınca bariyer kalkar, kamera yeni bölgeye kısa bir tur atar; o vardiyadan

@@ -10,7 +10,7 @@ namespace KurmaliKargo
     /// </summary>
     public sealed class LobbyUI : MonoBehaviour
     {
-        public enum Page { Home, Shop }
+        public enum Page { Home, Shop, Garage, City }
         public CourierGame Game;
         public Page Current { get; private set; }
         float toastLeft, toastRight;
@@ -49,7 +49,7 @@ namespace KurmaliKargo
         {
             if (!Game) return;
             if (Game.Phase != GamePhase.Menu) return;
-            if (Current == Page.Shop && Input.GetKeyDown(KeyCode.Escape)) Current = Page.Home;
+            if (Current != Page.Home && Input.GetKeyDown(KeyCode.Escape)) Current = Page.Home;
         }
 
         public void ShowPage(Page page) { if (Game && Game.Phase == GamePhase.Menu) Current = page; }
@@ -63,7 +63,10 @@ namespace KurmaliKargo
             GUI.matrix = GuiViewport.Matrix;
             try
             {
-                if (Current == Page.Home) DrawHome(); else DrawShop();
+                if (Current == Page.Home) DrawHome();
+                else if (Current == Page.Shop) DrawShop();
+                else if (Current == Page.Garage) DrawGarage();
+                else DrawCity();
                 DrawNav();
                 DrawTopBar();
                 DrawToast();
@@ -381,7 +384,7 @@ namespace KurmaliKargo
                     if (ToyGui.Hit(play)) StartOrResume();
                     continue;
                 }
-                bool active = i == 0 && Current == Page.Shop;
+                bool active = (i == 0 && Current == Page.Shop) || (i == 1 && Current == Page.Garage) || (i == 3 && Current == Page.City);
                 if (active) ToyGui.Panel(new Rect(r.x + 8 * U, r.y + 4 * U, r.width - 16 * U, r.height - 8 * U), ToyGui.Alpha(Color.white, .14f));
                 float icon = r.height * .42f;
                 Vector2 ic = new Vector2(r.center.x, r.y + r.height * .36f);
@@ -401,10 +404,286 @@ namespace KurmaliKargo
 
         void NavTap(int i)
         {
-            if (i == 0) Current = Current == Page.Shop ? Page.Home : Page.Shop;
-            else if (i == 1) Game.OpenGarageTab(0);
-            else if (i == 3) Game.OpenGarageTab(6);
-            else if (i == 4) Game.OpenGarageTab(4);
+            Page target = i == 0 ? Page.Shop : i == 1 ? Page.Garage : i == 3 ? Page.City : Page.Home;
+            if (i == 4) { Game.OpenGarageTab(4); return; } // job rewards are claimed in the garage
+            Current = Current == target ? Page.Home : target;
+        }
+
+        // ---- Garage page -------------------------------------------------
+
+        void PageHeader(string title, out float gridTop, out float bottom)
+        {
+            float top = TopBar.yMax + 10 * U;
+            bottom = NavBar.y - 8 * U;
+            ToyGui.Fill(GuiViewport.FullScreenRect, ToyGui.Alpha(Hex(0x203F4E), .55f));
+            ToyGui.Title(new Rect(TopBar.x, top, W * .5f, 50 * U + 6), title, Mathf.RoundToInt(38 * U + 6), Gold, TextAnchor.MiddleLeft);
+            gridTop = top + 60 * U + 6;
+        }
+
+        void DrawGarage()
+        {
+            PageHeader(L("GARAJ", "GARAGE"), out float gridTop, out float bottom);
+            Rect more = new Rect(TopBar.xMax - 240 * U - 20, TopBar.yMax + 16 * U, 240 * U + 20, 40 * U + 4);
+            if (ToyGui.Button(more, L("Dekor ve drone", "Decor & drone"), Pale, Ink, Mathf.RoundToInt(13 * U + 4))) Game.OpenGarageTab(2);
+            if (GuiViewport.Compact)
+            {
+                // Legend for the label-free stat bars on short phone cards.
+                string[] names = { L("Hız", "Speed"), L("Sağlamlık", "Care"), L("Kazanç", "Pay") };
+                Color[] colors = { Coral, Sky, Gold };
+                float lx = TopBar.x + 200 * U + 30;
+                for (int k = 0; k < 3; k++)
+                {
+                    ToyGui.Icon(new Rect(lx, more.center.y - 6, 12, 12), ToyGui.Disc, colors[k]);
+                    ToyGui.Text(new Rect(lx + 16, more.y, 110, more.height), names[k], 14, Color.white, true, TextAnchor.MiddleLeft);
+                    lx += 120;
+                }
+            }
+
+            float gap = 14 * U + 2;
+            float leftW = TopBar.width * .70f;
+            float cw = (leftW - gap * 2) / 3, ch = (bottom - gridTop - gap) / 2;
+            for (int i = 0; i < Game.VehicleCount; i++)
+                DrawVehicleCard(new Rect(TopBar.x + i % 3 * (cw + gap), gridTop + i / 3 * (ch + gap), cw, ch), i);
+            float rx = TopBar.x + leftW + gap, rw = TopBar.xMax - rx;
+            float paintH = (bottom - gridTop - gap) * .42f;
+            DrawPaints(new Rect(rx, gridTop, rw, paintH));
+            DrawDepot(new Rect(rx, gridTop + paintH + gap, rw, bottom - gridTop - paintH - gap));
+        }
+
+        void DrawVehicleCard(Rect r, int i)
+        {
+            bool equipped = Game.VehicleIndex == i, owned = Game.VehicleOwned(i);
+            if (equipped) ToyGui.Panel(new Rect(r.x - 4, r.y - 4, r.width + 8, r.height + 8), Gold);
+            ToyGui.Raised(r, Cream);
+            Rect art = new Rect(r.x, r.y, r.width, r.height * .40f);
+            ToyGui.Panel(art, VehicleTint(i));
+            DrawVehicleArt(art, i);
+            if (i >= 4)
+            {
+                Rect tag = new Rect(art.xMax - 96 * U - 10, art.y + 8 * U, 90 * U + 6, 24 * U + 4);
+                ToyGui.Panel(tag, Violet);
+                ToyGui.Text(tag, L("FANTASTİK", "FANTASY"), Mathf.RoundToInt(10 * U + 3), Color.white, true, TextAnchor.MiddleCenter);
+            }
+            float y = art.yMax + 4 * U;
+            ToyGui.Text(new Rect(r.x + 8 * U, y, r.width - 16 * U, 26 * U + 4), Game.VehicleNameFor(i), Mathf.RoundToInt(16 * U + 4), Ink, true, TextAnchor.MiddleCenter);
+            y += 28 * U + 4;
+            float barsH = r.height - (y - r.y) - 56 * U - 8;
+            float row = barsH / 3;
+            float fee = CourierGame.DeliveryBaseFeeFor(i) * CourierGame.DeliveryMultiplierFor(i);
+            if (row < 18)
+            {
+                // Short phone cards: three colored mini bars in one row; the page header has the legend.
+                float bw = (r.width - 24 * U - 16) / 3;
+                float[] values = { CourierGame.VehicleSpeedFor(i) / 1.32f, .45f / CourierGame.VehicleFragilityFor(i), fee / 90f };
+                Color[] colors = { Coral, Sky, Gold };
+                for (int k = 0; k < 3; k++)
+                {
+                    Rect bar = new Rect(r.x + 12 * U + k * (bw + 8), y + barsH * .5f - 4, bw, 8);
+                    ToyGui.Thin(bar, Hex(0xE2E8E4));
+                    ToyGui.Thin(new Rect(bar.x, bar.y, Mathf.Max(6, bar.width * Mathf.Clamp01(values[k])), bar.height), colors[k]);
+                }
+            }
+            else
+            {
+            StatBar(new Rect(r.x + 12 * U, y, r.width - 24 * U, row), L("Hız", "Speed"), CourierGame.VehicleSpeedFor(i) / 1.32f, Coral);
+            StatBar(new Rect(r.x + 12 * U, y + row, r.width - 24 * U, row), L("Sağlamlık", "Care"), .45f / CourierGame.VehicleFragilityFor(i), Sky);
+            StatBar(new Rect(r.x + 12 * U, y + row * 2, r.width - 24 * U, row), L("Kazanç", "Pay"), fee / 90f, Gold);
+            }
+
+            Rect action = new Rect(r.x + 12 * U, r.yMax - 52 * U - 6, r.width - 24 * U, 44 * U + 4);
+            int size = Mathf.RoundToInt(14 * U + 4);
+            if (equipped) ToyGui.Button(action, L("Kullanılıyor", "In use"), Pale, Teal, size, false);
+            else if (owned)
+            {
+                if (ToyGui.Button(action, L("Seç", "Use"), Teal, Color.white, size, Game.CanChangeVehicle)) Game.SelectVehicle(i);
+            }
+            else
+            {
+                int price = Game.VehiclePrice(i);
+                bool afford = Game.Coins >= price && Game.CanChangeVehicle;
+                if (ToyGui.Button(action, price.ToString("N0") + L(" jeton", " coins"), Gold, Ink, size, afford)) Game.SelectVehicle(i);
+            }
+        }
+
+        static void StatBar(Rect r, string name, float value, Color color)
+        {
+            int size = Mathf.RoundToInt(12 * U + 3);
+            ToyGui.Text(new Rect(r.x, r.y, r.width * .42f, r.height), name, size, Muted, true, TextAnchor.MiddleLeft);
+            Rect bar = new Rect(r.x + r.width * .44f, r.center.y - 4 * U - 1, r.width * .56f, 8 * U + 2);
+            ToyGui.Thin(bar, Hex(0xE2E8E4));
+            ToyGui.Thin(new Rect(bar.x, bar.y, Mathf.Max(6, bar.width * Mathf.Clamp01(value)), bar.height), color);
+        }
+
+        static Color VehicleTint(int i) => i == 0 ? Hex(0x8FD3C8) : i == 1 ? Hex(0xF4B39C) : i == 2 ? Hex(0xB7D3EE) :
+            i == 3 ? Hex(0xF2D18A) : i == 4 ? Hex(0xC9C0EA) : Hex(0xB5DDB0);
+
+        void DrawVehicleArt(Rect art, int i)
+        {
+            float s = Mathf.Min(art.width * .8f, art.height * 1.1f);
+            Vector2 c = new Vector2(art.center.x, art.center.y + 4 * U);
+            Color paint = CourierGame.ScooterColors[Game.ScooterColorIndex];
+            if (i >= 4) { DrawCreature(c, s * .62f, i == 4 ? Hex(0xC4B8EC) : Hex(0x9FD3A6), i == 4); return; }
+            float wheel = i == 3 ? s * .34f : s * .2f;
+            float bodyW = i == 2 ? s * .78f : i == 3 ? s * .7f : s * .6f, bodyH = i == 2 ? s * .4f : s * .22f;
+            float baseY = c.y + s * .18f;
+            ToyGui.Panel(new Rect(c.x - bodyW * .5f, baseY - bodyH - wheel * .3f, bodyW, bodyH), paint);
+            if (i == 2) ToyGui.Panel(new Rect(c.x - bodyW * .3f, baseY - bodyH - wheel * .3f + bodyH * .15f, bodyW * .5f, bodyH * .35f), Hex(0xE8F4FA));
+            if (i == 0 || i == 1)
+            {
+                ToyGui.Panel(new Rect(c.x + bodyW * .2f, baseY - bodyH * 2.4f, bodyW * .14f, bodyH * 1.6f), paint);
+                ToyGui.Panel(new Rect(c.x - bodyW * .4f, baseY - bodyH * 1.6f, bodyW * .4f, bodyH * .5f), Ink);
+                if (i == 1) ToyGui.Thin(new Rect(c.x - bodyW * .45f, baseY - bodyH * .9f, bodyW * .9f, bodyH * .18f), Cream);
+            }
+            if (i == 3) ToyGui.Panel(new Rect(c.x - bodyW * .25f, baseY - bodyH * 2 - wheel * .3f, bodyW * .5f, bodyH * .9f), paint);
+            foreach (float side in new[] { -1f, 1f })
+            {
+                Vector2 w = new Vector2(c.x + side * bodyW * .36f, baseY);
+                ToyGui.Icon(new Rect(w.x - wheel * .5f, w.y - wheel * .5f, wheel, wheel), ToyGui.Disc, Ink);
+                ToyGui.Icon(new Rect(w.x - wheel * .22f, w.y - wheel * .22f, wheel * .44f, wheel * .44f), ToyGui.Disc, Cream);
+            }
+        }
+
+        void DrawPaints(Rect r)
+        {
+            ToyGui.Raised(r, Cream);
+            ToyGui.Text(new Rect(r.x, r.y + 6 * U, r.width, 28 * U + 4), L("BOYA", "PAINT"), Mathf.RoundToInt(16 * U + 4), Ink, true, TextAnchor.MiddleCenter);
+            int count = CourierGame.ScooterColors.Length;
+            float d = Mathf.Min((r.width - 40 * U) / count - 12 * U, r.height - 90 * U);
+            float total = count * d + (count - 1) * 14 * U, x = r.center.x - total * .5f, y = r.y + 40 * U + 4;
+            for (int i = 0; i < count; i++)
+            {
+                Rect disc = new Rect(x + i * (d + 14 * U), y, d, d);
+                bool selected = Game.ScooterColorIndex == i, unlocked = Game.IsColorUnlocked(i);
+                if (selected) ToyGui.Icon(new Rect(disc.x - 5, disc.y - 5, disc.width + 10, disc.height + 10), ToyGui.Disc, Gold);
+                ToyGui.Icon(disc, ToyGui.Disc, CourierGame.ScooterColors[i]);
+                string label = selected ? L("Seçili", "On") : unlocked ? L("Seç", "Use") : Game.ColorPrice(i).ToString();
+                ToyGui.Text(new Rect(disc.x - 10, disc.yMax + 2 * U, disc.width + 20, 22 * U + 4), label, Mathf.RoundToInt(12 * U + 3),
+                    unlocked ? Ink : Muted, true, TextAnchor.MiddleCenter);
+                if (!unlocked) ToyGui.Coin(new Vector2(disc.center.x, disc.center.y), d * .36f);
+                if (!selected && (unlocked || Game.Coins >= Game.ColorPrice(i)) && ToyGui.Hit(disc)) Game.SelectColor(i);
+            }
+        }
+
+        void DrawDepot(Rect r)
+        {
+            ToyGui.Raised(r, Cream);
+            Rect head = new Rect(r.x, r.y, r.width, 40 * U + 6);
+            ToyGui.Panel(head, Teal);
+            ToyGui.Text(head, L("DEPO • Sv ", "DEPOT • Lv ") + Game.DepotLevel + "/" + CourierGame.MaxDepotLevel, Mathf.RoundToInt(15 * U + 4), Color.white, true, TextAnchor.MiddleCenter);
+            float pip = (r.width - 40 * U) / CourierGame.MaxDepotLevel;
+            for (int i = 0; i < CourierGame.MaxDepotLevel; i++)
+                ToyGui.Thin(new Rect(r.x + 20 * U + i * pip + 2, head.yMax + 12 * U, pip - 4, 12 * U + 2), i < Game.DepotLevel ? Gold : Hex(0xE2E8E4));
+            ToyGui.Text(new Rect(r.x + 14 * U, head.yMax + 30 * U + 4, r.width - 28 * U, r.height - head.height - 100 * U),
+                L("Her seviye: paket daha hızlı yüklenir, darbeler daha az zarar verir, drone hızlanır.",
+                  "Every level: faster loading, softer impacts and a quicker drone."), Mathf.RoundToInt(13 * U + 3), Muted, false, TextAnchor.UpperCenter);
+            Rect action = new Rect(r.x + 14 * U, r.yMax - 52 * U - 6, r.width - 28 * U, 44 * U + 4);
+            int size = Mathf.RoundToInt(14 * U + 4);
+            if (Game.DepotLevel >= CourierGame.MaxDepotLevel) ToyGui.Button(action, L("En üst seviye", "Max level"), Pale, Teal, size, false);
+            else if (ToyGui.Button(action, L("Yükselt • ", "Upgrade • ") + Game.DepotPrice.ToString("N0"), Gold, Ink, size, Game.Coins >= Game.DepotPrice))
+                Game.UpgradeDepot();
+        }
+
+        // ---- City page ---------------------------------------------------
+
+        void DrawCity()
+        {
+            PageHeader(L("ŞEHİR", "CITY"), out float gridTop, out float bottom);
+            ToyGui.Text(new Rect(TopBar.x + 260 * U + 40, TopBar.yMax + 10 * U, TopBar.width - 260 * U - 40, 50 * U + 6),
+                L("Rütbe atladıkça şehir büyür. Vardiyaların seçtiğin bölgede geçer.", "The city grows as you rank up. Shifts happen in the district you pick."),
+                Mathf.RoundToInt(14 * U + 4), Color.white, true, TextAnchor.MiddleRight);
+            int count = CourierGame.DistrictCount;
+            float gap = 16 * U + 2, cw = (TopBar.width - gap * (count - 1)) / count, ch = bottom - gridTop;
+            // A road joins the districts, left to right, in unlock order.
+            Rect road = new Rect(TopBar.x, gridTop + ch * .26f, TopBar.width, 18 * U + 4);
+            ToyGui.Thin(road, Hex(0x8C9AA0));
+            for (float x = road.x + 10; x < road.xMax - 20; x += 46 * U + 10)
+                ToyGui.Fill(new Rect(x, road.center.y - 1, 22 * U + 4, 3), Cream);
+            for (int i = 0; i < count; i++) DrawDistrict(new Rect(TopBar.x + i * (cw + gap), gridTop, cw, ch), i);
+        }
+
+        void DrawDistrict(Rect r, int i)
+        {
+            bool owned = Game.DistrictOwned(i), picked = Game.ShiftDistrict == i;
+            if (picked) ToyGui.Panel(new Rect(r.x - 4, r.y - 4, r.width + 8, r.height + 8), Gold);
+            ToyGui.Raised(r, Cream);
+            Rect art = new Rect(r.x, r.y, r.width, r.height * .46f);
+            ToyGui.Panel(art, DistrictSky(i));
+            DrawSkyline(art, i);
+            if (!owned)
+            {
+                ToyGui.Panel(art, ToyGui.Alpha(Ink, .55f));
+                float l = Mathf.Min(art.width, art.height) * .34f;
+                Vector2 c = art.center;
+                ToyGui.Icon(new Rect(c.x - l * .35f, c.y - l * .62f, l * .7f, l * .7f), ToyGui.Disc, Cream);
+                ToyGui.Icon(new Rect(c.x - l * .2f, c.y - l * .47f, l * .4f, l * .4f), ToyGui.Disc, ToyGui.Alpha(Ink, .9f));
+                ToyGui.Panel(new Rect(c.x - l * .5f, c.y - l * .2f, l, l * .72f), Gold);
+            }
+            if (picked)
+            {
+                Rect tag = new Rect(r.x - 6 * U, r.y + 10 * U, Mathf.Min(r.width * .8f, 170 * U + 20), 28 * U + 4);
+                ToyGui.Panel(tag, Coral);
+                ToyGui.Text(tag, L("VARDİYA BURADA", "SHIFTS HERE"), Mathf.RoundToInt(11 * U + 3), Color.white, true, TextAnchor.MiddleCenter);
+            }
+            float y = art.yMax + 6 * U;
+            ToyGui.Text(new Rect(r.x + 8 * U, y, r.width - 16 * U, 28 * U + 4), CourierGame.DistrictName(i), Mathf.RoundToInt(17 * U + 4), Ink, true, TextAnchor.MiddleCenter);
+            y += 30 * U + 4;
+            string pay = i == 0 ? L("Temel ücret", "Base pay") : "+" + Game.DistrictFee(i) + L(" jeton / teslimat", " coins / delivery");
+            ToyGui.Text(new Rect(r.x + 8 * U, y, r.width - 16 * U, 24 * U + 4), pay, Mathf.RoundToInt(14 * U + 3), i == 0 ? Muted : Teal, true, TextAnchor.MiddleCenter);
+            y += 26 * U + 4;
+            if (r.height > 260)
+                ToyGui.Text(new Rect(r.x + 12 * U, y, r.width - 24 * U, r.yMax - y - 60 * U - 30), CourierGame.DistrictHint(i), Mathf.RoundToInt(13 * U + 3), Muted, false, TextAnchor.UpperCenter);
+
+            Rect action = new Rect(r.x + 12 * U, r.yMax - 52 * U - 6, r.width - 24 * U, 44 * U + 4);
+            int size = Mathf.RoundToInt(13 * U + 4);
+            if (picked) ToyGui.Button(action, L("Seçili", "Selected"), Pale, Teal, size, false);
+            else if (owned)
+            {
+                if (ToyGui.Button(action, L("Burada çalış", "Work here"), Teal, Color.white, size)) Game.PickShiftDistrict(i);
+            }
+            else
+            {
+                Rect rankLine = new Rect(r.x + 8 * U, action.y - 50 * U - 10, r.width - 16 * U, 22 * U + 4);
+                ToyGui.Text(rankLine, L("Rütbe ", "Rank ") + Game.DistrictRank(i) + L("'te kendiliğinden açılır", " opens it for free"),
+                    Mathf.RoundToInt(12 * U + 3), Violet, true, TextAnchor.MiddleCenter);
+                Rect bar = new Rect(r.x + 18 * U, rankLine.yMax + 2 * U, r.width - 36 * U, 8 * U + 2);
+                ToyGui.Thin(bar, Hex(0xE2E8E4));
+                ToyGui.Thin(new Rect(bar.x, bar.y, Mathf.Max(6, bar.width * Mathf.Clamp01(Game.Rank / (float)Game.DistrictRank(i))), bar.height), Violet);
+                int price = Game.DistrictPrice(i);
+                if (ToyGui.Button(action, L("Şimdi aç • ", "Open now • ") + price.ToString("N0"), Gold, Ink, size, Game.Coins >= price))
+                    Game.UnlockDistrict(i);
+            }
+        }
+
+        static Color DistrictSky(int i) => i == 0 ? Hex(0xBFE3D4) : i == 1 ? Hex(0xF6D6B0) : i == 2 ? Hex(0xF2B7A8) : Hex(0xB9D4EE);
+
+        static void DrawSkyline(Rect art, int i)
+        {
+            float ground = art.yMax - art.height * .14f;
+            ToyGui.Fill(new Rect(art.x + 6, ground, art.width - 12, art.height * .1f), ToyGui.Alpha(Ink, .18f));
+            int n = 5;
+            float w = (art.width - 24) / n;
+            for (int b = 0; b < n; b++)
+            {
+                float x = art.x + 12 + b * w;
+                float h = art.height * (i == 3 ? .45f + .28f * ((b * 37) % 5) / 4f : .26f + .12f * ((b * 13) % 3) / 2f);
+                Color body = i == 0 ? new[] { Hex(0xF4C9B8), Hex(0xFFF0C8), Hex(0xC9E4D8) }[b % 3] :
+                    i == 1 ? new[] { Hex(0xFFE7B8), Hex(0xF1C79C) }[b % 2] :
+                    i == 2 ? new[] { Hex(0xF7E3C8), Hex(0xE8C7A6) }[b % 2] : new[] { Hex(0xE3F1FB), Hex(0xC8DFF2) }[b % 2];
+                Rect house = new Rect(x + w * .08f, ground - h, w * .84f, h);
+                ToyGui.Thin(house, body);
+                if (i == 0) ToyGui.Thin(new Rect(house.x - 2, house.y - h * .2f, house.width + 4, h * .3f), Hex(0xD97D6A));
+                if (i == 1)
+                    for (int s = 0; s < 4; s++)
+                        ToyGui.Fill(new Rect(house.x + s * house.width / 4, house.y, house.width / 4, h * .22f), s % 2 == 0 ? Coral : Cream);
+                if (i == 2)
+                {
+                    ToyGui.Thin(new Rect(house.x - w * .06f, house.y - h * .12f, house.width + w * .12f, h * .18f), Hex(0xC0453A));
+                    ToyGui.Icon(new Rect(house.center.x - w * .12f, house.y + h * .25f, w * .24f, w * .28f), ToyGui.Disc, Hex(0xE8473A));
+                }
+                if (i == 3)
+                    for (float wy = house.y + 6; wy < house.yMax - 8; wy += 10 * U + 4)
+                        ToyGui.Fill(new Rect(house.x + house.width * .18f, wy, house.width * .64f, 3 * U + 1), Hex(0x7FB6DE));
+            }
         }
 
         static void DrawNavIcon(int i, Vector2 c, float s)

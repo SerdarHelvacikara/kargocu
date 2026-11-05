@@ -32,9 +32,10 @@ namespace KurmaliKargo
 
         public void UnlockDistrict(int index)
         {
-            if (Phase != GamePhase.Garage || !ValidDistrict(index) || DistrictOwned(index) || Coins < DistrictPrice(index)) return;
+            if ((Phase != GamePhase.Garage && Phase != GamePhase.Menu) || !ValidDistrict(index) || DistrictOwned(index) || Coins < DistrictPrice(index)) return;
             SpendCoins(DistrictPrice(index));
             districtMask |= 1 << index;
+            districtPick = index;
             Notify(DistrictName(index) + GameText.Pick(" açıldı!", " unlocked!"));
             PlayFeelPair(660, 990);
             Save();
@@ -68,6 +69,34 @@ namespace KurmaliKargo
             if (!dogs) return;
             if (DistrictIndex == 0) dogs.Configure(seed);
             else dogs.ConfigureFixed(0);
+        }
+
+        // The city grows with play: each district opens by itself at a courier
+        // rank. Coins can still open one early.
+        static readonly int[] DistrictRanks = { 1, 3, 5, 8 };
+        int districtPick;
+        public int DistrictRank(int index) => ValidDistrict(index) ? DistrictRanks[index] : 1;
+        public int ShiftDistrict => DistrictOwned(districtPick) ? districtPick : 0;
+
+        public void PickShiftDistrict(int index)
+        {
+            if (Phase != GamePhase.Menu || !DistrictOwned(index) || districtPick == index) return;
+            districtPick = index;
+            Notify(GameText.Pick("Vardiyaların artık burada: ", "Your shifts are now in: ") + DistrictName(index));
+            PlayNote(880);
+            Save();
+        }
+
+        void UnlockDistrictsByRank()
+        {
+            for (int i = 1; i < DistrictCount; i++)
+            {
+                if (DistrictOwned(i) || Rank < DistrictRanks[i]) continue;
+                districtMask |= 1 << i;
+                districtPick = i;
+                Notify(GameText.Pick("YENİ BÖLGE AÇILDI: ", "NEW DISTRICT OPEN: ") + DistrictName(i) +
+                    GameText.Pick("! Vardiyaların artık orada.", "! Your shifts move there."));
+            }
         }
 
         internal bool DistrictStopSafeForTest(int index) => smokeTest && SafeRunPosition(world.Stops[index], 0) && SafeRunPosition(world.Stops[index], 90);

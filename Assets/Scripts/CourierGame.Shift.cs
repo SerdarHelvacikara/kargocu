@@ -162,6 +162,7 @@ namespace KurmaliKargo
         void StartShift()
         {
             shiftActive = false;
+            if (DistrictIndex != ShiftDistrict) SwitchDistrict(ShiftDistrict);
             StartTour();
             // The old three-page tour tutorial does not describe shifts; the
             // opening card pick and the order labels teach the loop instead.
