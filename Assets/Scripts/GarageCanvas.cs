@@ -34,6 +34,8 @@ namespace KurmaliKargo
         internal bool Visible => canvas && canvas.gameObject.activeSelf;
         internal int CardCount { get; private set; }
         internal int SelectedTab => tab;
+        /// <summary>Lobby shortcuts open the garage straight on a tab (0 vehicles, 4 jobs, 6 districts).</summary>
+        internal void PresetTab(int value) { tab = Mathf.Clamp(value, 0, 7); }
         internal bool CatalogFitsViewport => Visible && items && scroll && items.rect.width > 0 &&
             Mathf.Abs(items.rect.width - scroll.viewport.rect.width) <= .5f && Mathf.Abs(items.anchoredPosition.x) <= .5f;
 

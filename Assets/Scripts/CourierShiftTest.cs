@@ -116,8 +116,25 @@ namespace KurmaliKargo
             Check(game.Phase == GamePhase.ShiftEnd && game.ShiftSucceeded && game.ShiftBonus > 0 && game.Coins == wallet + game.ShiftBonus,
                 "Surviving the clock completes the shift and pays the bonus");
             yield return Shot("4-shift-complete");
+            Check(game.LastRankGain > 0 && (game.Rank > 1 || game.RankProgress > 0), "Every shift adds courier rank XP");
             game.FinishShift();
             Check(game.Phase == GamePhase.Menu && !game.InShift && !game.HasSavedRun, "Leaving returns to the menu with nothing to resume");
+
+            // Lobby: free gift through a rewarded ad, then a store purchase made from the shop page.
+            wallet = game.Coins;
+            int gift = game.GiftAmount;
+            Check(game.CanClaimGift, "The lobby gift is ready on a fresh profile");
+            yield return Shot("5-lobby");
+            game.ClaimGift();
+            yield return null;
+            Check(game.Coins == wallet + gift && !game.GiftReady && !game.CanClaimGift, "The gift ad pays once and starts its cooldown");
+            game.Lobby.ShowPage(LobbyUI.Page.Shop);
+            yield return Shot("6-shop");
+            wallet = game.Coins;
+            game.PurchaseProduct(CommerceConfiguration.CoinsSmall);
+            yield return null;
+            Check(game.Coins == wallet + 500, "A coin pack can be bought straight from the lobby shop");
+            game.Lobby.ShowPage(LobbyUI.Page.Home);
             Finish();
         }
 

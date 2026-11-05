@@ -140,6 +140,8 @@ namespace KurmaliKargo
             releasePanels = gameObject.AddComponent<ReleasePanels>();
             releasePanels.Game = this;
             gameObject.AddComponent<ShiftHUD>().Game = this;
+            Lobby = gameObject.AddComponent<LobbyUI>();
+            Lobby.Game = this;
             Phase = GamePhase.Menu;
             LoadRun();
             InitializeCommerce();

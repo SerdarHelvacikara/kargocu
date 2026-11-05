@@ -67,6 +67,7 @@ namespace KurmaliKargo
             LoadCommerceProgress();
             LoadCompanions();
             LoadBusiness();
+            LoadLobby();
             districtMask = smokeTest ? 1 : (LocalProgress.GetInt(DistrictKey, 1) & 15) | 1;
             DepotLevel = smokeTest ? 1 : Mathf.Clamp(LocalProgress.GetInt(DepotLevelKey, 1), 1, MaxDepotLevel);
             VehicleIndex = smokeTest ? 0 : Mathf.Clamp(LocalProgress.GetInt(VehicleKey, 0), 0, VehicleCount - 1);
@@ -97,6 +98,7 @@ namespace KurmaliKargo
             LocalProgress.SetInt(DistrictKey, districtMask);
             LocalProgress.SetInt(DepotLevelKey, DepotLevel);
             SaveCommerceProgress();
+            SaveLobby();
             // Shifts are never resumable; their coins are banked per delivery.
             if (shiftActive) savedRun = null;
             else if (runActive)
@@ -486,6 +488,7 @@ namespace KurmaliKargo
             ResetMonsterTruckOwnership();
             ResetFantasyVehicleOwnership();
             ResetCommerceProgress();
+            ResetLobby();
             business = new BusinessSave();
             route = new[] { 0, 1, 2 };
             LastMultiplier = 1;

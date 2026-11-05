@@ -65,6 +65,7 @@ namespace KurmaliKargo
             if (Game && Game.Phase == GamePhase.Shop) return;
             if (!Game || (Game.Phase != GamePhase.Menu && Game.Phase != GamePhase.Playing &&
                 Game.Phase != GamePhase.Result && Game.Phase != GamePhase.Shop)) return;
+            if (Game.Phase == GamePhase.Menu) return; // LobbyUI owns the menu
             // Shifts use ShiftHUD's slim bar; only the comic bubbles come from here.
             if (Game.InShift && Game.Phase == GamePhase.Playing) { Game.DrawFeelGUI(); return; }
             if (GuiViewport.Compact)

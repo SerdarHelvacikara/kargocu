@@ -174,6 +174,7 @@ namespace KurmaliKargo
             shiftStars = ShiftStarCount;
             shiftXp = shiftDeliveries = shiftEarnings = shiftBestCombo = shiftBonus = shiftPendingLevels = shiftOfferCount = 0;
             shiftLevel = 1;
+            shiftRankAwarded = 0;
             Array.Clear(shiftCards, 0, shiftCards.Length);
             shiftRandom = new System.Random(streetEvents.Seed ^ 0x51F7);
             savedRun = null;
@@ -441,6 +442,7 @@ namespace KurmaliKargo
             pointerHeld = false; velocity = Vector3.zero;
             runActive = false;
             savedRun = null;
+            AwardShiftRank(success);
             Phase = GamePhase.ShiftEnd;
             if (success) StartCoroutine(DeliveryJingle()); else PlayFeelPair(330, 220);
             Save();
@@ -479,6 +481,7 @@ namespace KurmaliKargo
             shiftActive = false;
             runActive = false;
             savedRun = null;
+            NoticeTime = 0; // shift notices do not follow into the lobby
             ClearOverlays();
             Phase = GamePhase.Menu;
             Save();

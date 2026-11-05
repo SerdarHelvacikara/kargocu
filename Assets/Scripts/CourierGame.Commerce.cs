@@ -98,7 +98,7 @@ namespace KurmaliKargo
 
         public void PurchaseProduct(string key)
         {
-            if (Phase != GamePhase.Garage || !StoreReady) return;
+            if ((Phase != GamePhase.Garage && Phase != GamePhase.Menu) || !StoreReady) return;
             storeService.Purchase(key, FulfillPurchase);
         }
         void FulfillPurchase(StorePurchaseResult result)
@@ -125,7 +125,7 @@ namespace KurmaliKargo
         }
         public void RestorePurchases()
         {
-            if (Phase != GamePhase.Garage || !StoreReady) return;
+            if ((Phase != GamePhase.Garage && Phase != GamePhase.Menu) || !StoreReady) return;
             storeService.Restore(result =>
             {
                 if (result == null || !result.Completed) { Notify(GameText.Pick("Geri yükleme şu an kullanılamıyor.", "Restore is unavailable right now.")); return; }
@@ -168,7 +168,7 @@ namespace KurmaliKargo
             }
             if (!result.Completed || !result.RewardEarned || context.rewarded) return;
             context.rewarded = true;
-            if (GrantShiftReward(context.kind, context.amount)) { Save(); return; }
+            if (GrantShiftReward(context.kind, context.amount) || GrantLobbyReward(context.kind, context.amount)) { Save(); return; }
             if (context.kind == "rent")
             {
                 int old = VehicleIndex;

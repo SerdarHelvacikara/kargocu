@@ -60,7 +60,9 @@ Her kartın 3 seviyesi var. Aynı kartı tekrar seçmek onu güçlendirir.
 
 ## 5. Kontroller ve ekran
 
-- **Dikey ekran (portrait).** Tek elle oynanır.
+- **Yatay ekran (landscape) — karar 5 Kasım 2026'da değişti.** İzometrik şehir
+  yatayda çok daha iyi okunuyor ve bütün ekranlar (garaj, ayarlar, telefon
+  düzeni) zaten yatay için yapılmış. Dikeye geçmek şimdilik ertelendi.
 - Ekranın herhangi bir yerine dokun-sürükle: yüzen joystick.
 - Oyun HUD'u ince: üstte yıldızlar, vardiya süresi, jeton, XP çubuğu;
   altta joystick alanı. Oyun alanı ekranın en az %80'i.

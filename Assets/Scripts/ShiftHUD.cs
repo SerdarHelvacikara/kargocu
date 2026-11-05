@@ -12,10 +12,11 @@ namespace KurmaliKargo
     {
         public CourierGame Game;
 
-        static readonly Color Ink = Hex(0x193B4B), Muted = Hex(0x66818B), Cream = Hex(0xFFF9ED), Teal = Hex(0x119E99),
-            Coral = Hex(0xE97760), Gold = Hex(0xF3BF48), Pale = Hex(0xEAF3EA), StarOff = Hex(0xCFD8D2);
-        Texture2D rounded, roundedSmall, star, disc, white;
-        GUIStyle box, thin, label, hit;
+        static readonly Color Ink = ToyGui.Ink, Muted = ToyGui.Muted, Cream = ToyGui.Cream, Teal = ToyGui.Teal,
+            Coral = ToyGui.Coral, Gold = ToyGui.Gold, Pale = ToyGui.Pale, StarOff = ToyGui.StarOff;
+        static Texture2D star => ToyGui.Star;
+        static Texture2D disc => ToyGui.Disc;
+        static GUIStyle hit => ToyGui.HitStyle;
         float shownCoins, coinBump;
         bool coinsPrimed;
 
@@ -41,28 +42,9 @@ namespace KurmaliKargo
             return p.y < b.yMax + 6;
         }
 
-        void Awake()
-        {
-            if (!Game) Game = GetComponent<CourierGame>();
-            rounded = MakeRounded(64, 22);
-            roundedSmall = MakeRounded(12, 4);
-            disc = MakeRounded(64, 32);
-            star = MakeStar(64);
-            white = new Texture2D(1, 1) { hideFlags = HideFlags.HideAndDontSave };
-            white.SetPixel(0, 0, Color.white); white.Apply();
-        }
-
+        void Awake() { if (!Game) Game = GetComponent<CourierGame>(); }
         void Start() { if (Game) Game.ShiftPaid += OnPaid; }
-
-        void OnDestroy()
-        {
-            if (Game) Game.ShiftPaid -= OnPaid;
-            if (rounded) Destroy(rounded);
-            if (roundedSmall) Destroy(roundedSmall);
-            if (disc) Destroy(disc);
-            if (star) Destroy(star);
-            if (white) Destroy(white);
-        }
+        void OnDestroy() { if (Game) Game.ShiftPaid -= OnPaid; }
 
         void OnPaid(Vector3 world, int amount)
         {
@@ -96,14 +78,7 @@ namespace KurmaliKargo
             if (!Game || !Game.InShift) return;
             bool playing = Game.Phase == GamePhase.Playing;
             if (!playing && Game.Phase != GamePhase.ShiftCard && Game.Phase != GamePhase.ShiftEnd) return;
-            if (box == null)
-            {
-                box = new GUIStyle(GUIStyle.none) { normal = { background = rounded }, border = new RectOffset(22, 22, 22, 22) };
-                thin = new GUIStyle(GUIStyle.none) { normal = { background = roundedSmall }, border = new RectOffset(4, 4, 4, 4) };
-                label = new GUIStyle(GUI.skin.label) { font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf"), wordWrap = true,
-                    richText = false, padding = new RectOffset(0, 0, 0, 0) };
-                hit = new GUIStyle(GUIStyle.none);
-            }
+            ToyGui.Ensure();
             Matrix4x4 oldMatrix = GUI.matrix; Color oldColor = GUI.color;
             GUI.depth = -10; // above the comic bubbles drawn by CourierHUD
             GUI.matrix = GuiViewport.Matrix;
@@ -342,7 +317,7 @@ namespace KurmaliKargo
         void DrawEnd()
         {
             Fill(GuiViewport.FullScreenRect, new Color(.04f, .10f, .13f, .55f));
-            float pw = Mathf.Min(Compact ? 620 : 560, W - 32), ph = Compact ? H - 24 : 600;
+            float pw = Mathf.Min(Compact ? 620 : 560, W - 32), ph = Compact ? H - 24 : 680;
             Rect p = new Rect((W - pw) * .5f, (H - ph) * .5f, pw, ph);
             Panel(p, Cream);
             bool won = Game.ShiftSucceeded;
@@ -352,10 +327,12 @@ namespace KurmaliKargo
                 won ? L("Mahalle sana bayıldı!", "The neighborhood loves you!") : L("Yıldızların bitti. Bir dahakine!", "Out of stars. Next time!"),
                 Compact ? 15 : 19, Muted, false, TextAnchor.MiddleCenter);
 
-            float rowY = p.y + (Compact ? 82 : 132), rowH = Compact ? 24 : 36;
+            float rowY = p.y + (Compact ? 78 : 128), rowH = Compact ? 22 : 34;
             Row(p, ref rowY, rowH, L("Teslimat", "Deliveries"), Game.ShiftDeliveries.ToString());
             Row(p, ref rowY, rowH, L("En uzun seri", "Best streak"), "×" + Mathf.Max(1, Game.ShiftBestCombo));
             Row(p, ref rowY, rowH, L("Seviye", "Level"), Game.ShiftLevel.ToString());
+            Row(p, ref rowY, rowH, Game.RankedUpLastShift ? L("RÜTBE ATLADIN!", "RANK UP!") : L("Rütbe puanı", "Rank XP"),
+                "+" + Game.LastRankGain + (Game.RankedUpLastShift ? "  →  " + Game.Rank : ""));
             if (Game.ShiftBonus > 0) Row(p, ref rowY, rowH, L("Vardiya bonusu", "Shift bonus"), "+" + Game.ShiftBonus);
             Row(p, ref rowY, rowH, L("Toplam kazanç", "Total earned"), Game.ShiftEarnings + L(" jeton", " coins"), true);
 
@@ -407,75 +384,15 @@ namespace KurmaliKargo
             return GuiViewport.ScreenToDesign(new Vector2(s.x, s.y));
         }
 
-        bool Button(Rect r, string text, Color fill, Color ink, int size)
-        {
-            Panel(r, fill);
-            Text(r, text, size, ink, true, TextAnchor.MiddleCenter);
-            return GUI.Button(r, GUIContent.none, hit);
-        }
+        bool Button(Rect r, string text, Color fill, Color ink, int size) => ToyGui.Button(r, text, fill, ink, size);
+        static void Panel(Rect r, Color c) => ToyGui.Panel(r, c);
+        static void Thin(Rect r, Color c) => ToyGui.Thin(r, c);
+        static void Fill(Rect r, Color c) => ToyGui.Fill(r, c);
+        static void Icon(Rect r, Texture2D t, Color c) => ToyGui.Icon(r, t, c);
+        static void Text(Rect r, string text, int size, Color color, bool bold = false, TextAnchor anchor = TextAnchor.UpperLeft) =>
+            ToyGui.Text(r, text, size, color, bold, anchor);
 
-        void Panel(Rect r, Color c) { GUI.color = c; GUI.Box(r, GUIContent.none, box); GUI.color = Color.white; }
-        void Thin(Rect r, Color c) { GUI.color = c; GUI.Box(r, GUIContent.none, thin); GUI.color = Color.white; }
-        void Fill(Rect r, Color c) { GUI.color = c; GUI.DrawTexture(r, white); GUI.color = Color.white; }
-        void Icon(Rect r, Texture2D t, Color c) { GUI.color = c; GUI.DrawTexture(r, t); GUI.color = Color.white; }
-
-        void Text(Rect r, string text, int size, Color color, bool bold = false, TextAnchor anchor = TextAnchor.UpperLeft)
-        {
-            label.fontSize = Mathf.Max(1, size); label.fontStyle = bold ? FontStyle.Bold : FontStyle.Normal; label.alignment = anchor;
-            label.normal.textColor = color;
-            GUI.Label(r, text, label);
-        }
-
-        static Texture2D MakeRounded(int size, float radius)
-        {
-            var t = new Texture2D(size, size, TextureFormat.RGBA32, false) { hideFlags = HideFlags.HideAndDontSave, wrapMode = TextureWrapMode.Clamp };
-            var pixels = new Color[size * size];
-            for (int y = 0; y < size; y++)
-                for (int x = 0; x < size; x++)
-                {
-                    float dx = Mathf.Max(0, Mathf.Max(radius - (x + .5f), x + .5f - (size - radius)));
-                    float dy = Mathf.Max(0, Mathf.Max(radius - (y + .5f), y + .5f - (size - radius)));
-                    pixels[y * size + x] = new Color(1, 1, 1, Mathf.Clamp01(radius - Mathf.Sqrt(dx * dx + dy * dy) + .5f));
-                }
-            t.SetPixels(pixels); t.Apply();
-            return t;
-        }
-
-        static Texture2D MakeStar(int size)
-        {
-            var t = new Texture2D(size, size, TextureFormat.RGBA32, false) { hideFlags = HideFlags.HideAndDontSave, wrapMode = TextureWrapMode.Clamp };
-            var points = new Vector2[10];
-            for (int i = 0; i < 10; i++)
-            {
-                float angle = Mathf.PI * .5f + i * Mathf.PI / 5;
-                float radius = (i % 2 == 0 ? .48f : .21f) * size;
-                points[i] = new Vector2(size * .5f + Mathf.Cos(angle) * radius, size * .5f + Mathf.Sin(angle) * radius);
-            }
-            var pixels = new Color[size * size];
-            for (int y = 0; y < size; y++)
-                for (int x = 0; x < size; x++)
-                {
-                    // 4x supersampling for soft edges.
-                    int inside = 0;
-                    for (int sy = 0; sy < 2; sy++)
-                        for (int sx = 0; sx < 2; sx++)
-                            if (InPolygon(points, new Vector2(x + .25f + sx * .5f, y + .25f + sy * .5f))) inside++;
-                    pixels[y * size + x] = new Color(1, 1, 1, inside / 4f);
-                }
-            t.SetPixels(pixels); t.Apply();
-            return t;
-        }
-
-        static bool InPolygon(Vector2[] poly, Vector2 p)
-        {
-            bool inside = false;
-            for (int i = 0, j = poly.Length - 1; i < poly.Length; j = i++)
-                if ((poly[i].y > p.y) != (poly[j].y > p.y) &&
-                    p.x < (poly[j].x - poly[i].x) * (p.y - poly[i].y) / (poly[j].y - poly[i].y) + poly[i].x) inside = !inside;
-            return inside;
-        }
-
-        static Color Alpha(Color c, float a) { c.a = a; return c; }
-        static Color Hex(int rgb) => new Color((rgb >> 16 & 255) / 255f, (rgb >> 8 & 255) / 255f, (rgb & 255) / 255f);
+        static Color Alpha(Color c, float a) => ToyGui.Alpha(c, a);
+        static Color Hex(int rgb) => ToyGui.Hex(rgb);
     }
 }
