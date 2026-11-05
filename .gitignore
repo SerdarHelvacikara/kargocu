@@ -1,0 +1,46 @@
+# Unity generated
+/Library/
+/Temp/
+/Obj/
+/Logs/
+/UserSettings/
+/MemoryCaptures/
+/Recordings/
+/Builds/
+/Build/
+
+# IDE
+*.csproj
+*.sln
+*.slnx
+*.user
+*.pidb
+*.booproj
+*.svd
+*.pdb
+*.mdb
+*.opendb
+*.VC.db
+.vs/
+.vscode/
+.idea/
+
+# Platform builds and crash dumps
+*.apk
+*.aab
+*.ipa
+*.unitypackage
+sysinfo.txt
+crashlytics-build.properties
+
+# Signing and store secrets: never commit
+*.keystore
+*.jks
+*.p12
+*.mobileprovision
+*-service-account*.json
+/Assets/Config/AdsConfig.json
+
+# OS
+.DS_Store
+Thumbs.db

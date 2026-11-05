@@ -1,0 +1,19 @@
+{
+  "name": "KurmaliKargo.Runtime",
+  "rootNamespace": "KurmaliKargo",
+  "references": ["Unity.Purchasing", "Unity.LevelPlay", "Unity.Advertisement.IosSupport", "UnityEngine.UI"],
+  "includePlatforms": [],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": true,
+  "defineConstraints": [],
+  "versionDefines": [
+    {"name": "com.google.ads.mobile", "expression": "[11.6.0,12.0.0)", "define": "KARGO_GOOGLE_UMP"},
+    {"name": "com.unity.purchasing", "expression": "[5.4.4,6.0.0)", "define": "KARGO_UNITY_IAP"},
+    {"name": "com.unity.services.levelplay", "expression": "[9.6.0,10.0.0)", "define": "KARGO_LEVELPLAY"},
+    {"name": "com.unity.ads.ios-support", "expression": "[1.3.0,2.0.0)", "define": "KARGO_ATT"}
+  ],
+  "noEngineReferences": false
+}
