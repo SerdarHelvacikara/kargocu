@@ -154,7 +154,35 @@ namespace KurmaliKargo
             game.StartRun();
             Check(game.InShift && game.DistrictIndex == 1, "The next shift starts in the picked district");
             if (game.Phase == GamePhase.ShiftCard) game.ChooseShiftCard(0);
-            yield return Shot("9-district-shift");
+            yield return Shot("9-district-1-ride");
+
+            // Every district: the lobby shows its whole skyline, then a ride inside it.
+            game.OpenAllDistrictsForTest();
+            game.ShowMenu();
+            game.PickShiftDistrict(2);
+            Check(game.HasSavedRun && game.ShiftDistrict == 1 && game.DistrictIndex == 1, "A paused shift keeps its district; switching is refused");
+            game.ResumeRun();
+            Check(game.Phase == GamePhase.Playing && game.InShift, "The paused shift resumes from the lobby");
+            for (int d = 0; d < CourierGame.DistrictCount; d++)
+            {
+                game.SetShiftElapsedForTest(CourierGame.ShiftLength - .05f);
+                yield return WaitUntil(() => game.Phase == GamePhase.ShiftEnd, 2);
+                game.FinishShift();
+                game.PickShiftDistrict(d);
+                Check(game.Phase == GamePhase.Menu && game.ShiftDistrict == d && game.DistrictIndex == d, "Picking district " + d + " moves the lobby backdrop there");
+                yield return Shot("10-district-" + d + "-overview");
+                game.StartRun();
+                if (game.Phase == GamePhase.ShiftCard) game.ChooseShiftCard(0);
+                Check(game.InShift && game.DistrictIndex == d && game.LiveBoardCountForTest > 0, "District " + d + " runs a shift with waiting orders");
+                yield return PickUp();
+                Check(game.HasPackage, "District " + d + " has a reachable waiting order");
+                game.PlaceForTest(game.TargetPosition);
+                int delivered = game.ShiftDeliveries;
+                yield return WaitUntil(() => game.ShiftDeliveries > delivered || game.Phase == GamePhase.ShiftCard, 3);
+                Check(game.ShiftDeliveries > delivered, "District " + d + " has a reachable drop-off");
+                if (game.Phase == GamePhase.ShiftCard) game.ChooseShiftCard(0);
+                yield return Shot("11-district-" + d + "-ride");
+            }
             Finish();
         }
 

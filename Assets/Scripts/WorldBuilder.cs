@@ -13,6 +13,7 @@ namespace KurmaliKargo
         public Color[] StopColors;
         public Bounds PlayBounds;
         public CityLandmarks City;
+        public DistrictLife Life;
         public Transform Root;
         public Vector3[] Pickups;
     }
@@ -513,7 +514,11 @@ namespace KurmaliKargo
             go.transform.SetParent(parent == null ? world : parent, false);
             go.transform.localPosition = p;
             go.transform.localScale = size;
-            Object.Destroy(go.GetComponent<Collider>());
+            // Destroy is deferred to the end of the frame; disable first so the
+            // same-frame safety checks right after a district build ignore decor.
+            Collider collider = go.GetComponent<Collider>();
+            collider.enabled = false;
+            Object.Destroy(collider);
             go.GetComponent<Renderer>().sharedMaterial = Mat(color);
             return go;
         }

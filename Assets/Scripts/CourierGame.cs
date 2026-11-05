@@ -146,6 +146,8 @@ namespace KurmaliKargo
             LoadRun();
             InitializeCommerce();
             InitializeFeel();
+            // The lobby opens on the district the next shift will use.
+            if (ShiftModeEnabled && ShiftDistrict != DistrictIndex && savedRun == null) SwitchDistrict(ShiftDistrict);
             if (shiftTest) gameObject.AddComponent<CourierShiftTest>();
             else if (smokeTest && Array.Exists(Environment.GetCommandLineArgs(), a => a == "-v08Test")) gameObject.AddComponent<CourierV08Test>();
             else if (smokeTest) gameObject.AddComponent<CourierSmokeTest>();
@@ -313,6 +315,9 @@ namespace KurmaliKargo
             TickFeel(Time.deltaTime);
             TickUrgency(Time.deltaTime);
             if (world.City) world.City.Tick(Time.deltaTime, Phase == GamePhase.Playing, ReducedMotion, player.position, TrafficMargin);
+            // District people also stroll behind the lobby, so the menu city feels alive.
+            if (world.Life && (Phase == GamePhase.Playing || Phase == GamePhase.Menu))
+                world.Life.Tick(Time.deltaTime, Phase == GamePhase.Playing, ReducedMotion);
             TickStreetMusic();
             TickIncidents(Time.deltaTime);
             TickDogs(Time.deltaTime);

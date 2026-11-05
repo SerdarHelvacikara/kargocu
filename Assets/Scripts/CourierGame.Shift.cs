@@ -546,6 +546,7 @@ namespace KurmaliKargo
         internal void ExpireOrderForTest() { if (smokeTest && shiftTest && (HasPackage || IsParcelDropped)) TimeLeft = 0; }
         internal void ExpireBoardForTest() { if (smokeTest && shiftTest) foreach (BoardOrder slot in board) if (slot.live) slot.left = .01f; }
         internal int LiveBoardCountForTest => LiveBoardCount();
+        internal void OpenAllDistrictsForTest() { if (smokeTest && shiftTest) districtMask = (1 << DistrictCount) - 1; }
         internal void SetCargoForTest(float value) { if (smokeTest && shiftTest && HasPackage) Cargo = Mathf.Clamp(value, 1, 100); }
     }
 }

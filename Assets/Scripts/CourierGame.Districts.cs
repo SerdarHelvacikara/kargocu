@@ -55,10 +55,21 @@ namespace KurmaliKargo
             if (DistrictIndex == index) return;
             world.Root.gameObject.SetActive(false);
             if (world.City) world.City.gameObject.SetActive(false);
+            if (world.Life) world.Life.gameObject.SetActive(false);
             DistrictIndex = index;
-            world = districts[index] ?? (districts[index] = WorldBuilder.BuildDistrict(index));
+            if (districts[index] == null)
+            {
+                districts[index] = WorldBuilder.BuildDistrict(index);
+                if (districts[index].Life) districts[index].Life.Speech += FeelCitySpeech;
+            }
+            world = districts[index];
             world.Root.gameObject.SetActive(true);
             if (world.City) world.City.gameObject.SetActive(true);
+            if (world.Life) world.Life.gameObject.SetActive(true);
+            // Each district has its own sky and haze.
+            Color sky = WorldBuilder.DistrictSky(index);
+            if (GameCamera) GameCamera.backgroundColor = sky;
+            RenderSettings.fogColor = sky;
             for (int i = 0; i < customers.Length; i++)
                 customers[i].transform.position = world.Stops[i] + new Vector3(-.7f, 0, 1.6f);
             Physics.SyncTransforms();
@@ -81,7 +92,14 @@ namespace KurmaliKargo
         public void PickShiftDistrict(int index)
         {
             if (Phase != GamePhase.Menu || !DistrictOwned(index) || districtPick == index) return;
+            if (HasSavedRun)
+            {
+                // A paused shift or old tour still lives on this map.
+                Notify(GameText.Pick("Önce yarım kalan vardiyanı bitir.", "Finish your paused shift first."));
+                return;
+            }
             districtPick = index;
+            SwitchDistrict(index); // the lobby's living backdrop moves with the pick
             Notify(GameText.Pick("Vardiyaların artık burada: ", "Your shifts are now in: ") + DistrictName(index));
             PlayNote(880);
             Save();
